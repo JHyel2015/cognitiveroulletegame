@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "940308333057",
+    "project_id": "cognitiveroulletegame",
+    "storage_bucket": "cognitiveroulletegame.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:940308333057:android:da7e9b789c35dec565b600",
+        "android_client_info": {
+          "package_name": "com.example.cognitiveroulletegame"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbXNnX4rFNOY4OaZInGl2dnO6HfO4Qmo8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

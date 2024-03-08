@@ -1,23 +1,23 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
+import 'dart:math';
+
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
-import 'package:cognitiveroulletegame/pages/game_page.dart';
-import 'package:cognitiveroulletegame/pages/levels_page.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class GamePage extends StatefulWidget {
+  const GamePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<GamePage> createState() => _GamePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _GamePageState extends State<GamePage> {
   String _connectionStatus = 'Unknown';
   // PageController
   final _controller = PageController(viewportFraction: 0.8);
@@ -26,6 +26,13 @@ class _HomePageState extends State<HomePage> {
   final user = FirebaseAuth.instance.currentUser;
 
   bool _btnActive = false;
+
+  List<Color> colorList = [
+    Colors.blue,
+    Colors.red,
+    Colors.green,
+    Colors.yellow,
+  ];
 
   @override
   void initState() {
@@ -65,81 +72,74 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void signUserOut() {
-    FirebaseAuth.instance.signOut();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AuthPage(),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
+    int randomNum = 0;
+    int randomNum2 = 0;
+
+    void getRandomInt() {
+      final random = Random();
+      int number = random.nextInt(5);
+      setState(() {
+        randomNum = number;
+      });
+    }
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: signUserOut,
-            icon: Icon(
-              Icons.logout,
-              color: kColorPrimary,
-            ),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 25),
             Text(
-              'Cognitive Game',
+              'Puntaje',
               style: TextStyle(
                 fontSize: 24,
               ),
             ),
-            Image.asset('assets/splash.gif'),
+            const SizedBox(height: 15),
             Text(
-              'Puntaje más alto',
+              'Puntaje',
               style: TextStyle(
                 fontSize: 24,
               ),
+            ),
+            const SizedBox(height: 15),
+            Row(
+              children: [
+                Column(
+                  children: [
+                    Text('Seleccionaste'),
+                    InkWell(
+                      onTap: () {
+                        getRandomInt();
+                      },
+                      child: Container(
+                        color: colorList[randomNum],
+                        width: 100.0,
+                        height: 100.0,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+                const SizedBox(width: 15),
+                Container(
+                  color: colorList[randomNum],
+                  width: 120.0,
+                  height: 120.0,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 25),
-            Text(
-              '10',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 40),
-            TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: kColorPrimary,
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    // builder: (context) => LevelsPage(),
-                    builder: (context) => GamePage(),
-                  ),
-                );
-              },
-              child: Text(
-                'JUGAR',
-                style: TextStyle(color: kColorSecondary),
-              ),
-            ),
-            const SizedBox(height: 10),
+            Image.asset('assets/robot.gif'),
+            const SizedBox(height: 25),
             IconButton(
               style: TextButton.styleFrom(
                 backgroundColor: kColorPrimary,

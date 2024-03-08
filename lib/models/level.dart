@@ -35,9 +35,9 @@ class Level {
     return <String, dynamic>{
       'id': id,
       'name': name,
-      'displayName': description,
-      'phoneNumber': difficulty,
-      'photoURL': previousLevelRequirement,
+      'description': description,
+      'difficulty': difficulty,
+      'previousLevelRequirement': previousLevelRequirement,
       'synced': synced,
       "timestamp": timestamp.toString(),
     };

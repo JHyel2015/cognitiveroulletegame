@@ -69,8 +69,16 @@ class _LoginPageState extends State<RegisterPage> {
 
     try {
       GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      await FirebaseAuth.instance.signInWithProvider(googleProvider);
+
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithProvider(googleProvider);
+
+      User? user = userCredential.user;
       Navigator.pop(context);
+
+      if (user != null) {
+        user = FirebaseAuth.instance.currentUser;
+      }
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
 
@@ -89,8 +97,15 @@ class _LoginPageState extends State<RegisterPage> {
     );
 
     try {
-      await FirebaseAuth.instance.signInAnonymously();
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInAnonymously();
       Navigator.pop(context);
+
+      User? user = userCredential.user;
+
+      if (user != null) {
+        user = FirebaseAuth.instance.currentUser;
+      }
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
 
@@ -144,21 +159,21 @@ class _LoginPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: displayNameController,
                   decoration: InputDecoration(
-                    hintText: 'Nombre de usuario',
+                    labelText: 'Nombre de usuario',
                   ),
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: emailController,
                   decoration: InputDecoration(
-                    hintText: 'Correo electrónico',
+                    labelText: 'Correo electrónico',
                   ),
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: passwordController,
                   decoration: InputDecoration(
-                    hintText: 'Contraseña',
+                    labelText: 'Contraseña',
                   ),
                   obscureText: true,
                 ),
@@ -166,7 +181,7 @@ class _LoginPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: confirmPasswordController,
                   decoration: InputDecoration(
-                    hintText: 'Confirmar contraseña',
+                    labelText: 'Confirmar contraseña',
                   ),
                   obscureText: true,
                 ),

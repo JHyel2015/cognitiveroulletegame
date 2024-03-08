@@ -52,8 +52,16 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      await FirebaseAuth.instance.signInWithProvider(googleProvider);
+
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithProvider(googleProvider);
+
+      User? user = userCredential.user;
       Navigator.pop(context);
+
+      if (user != null) {
+        user = FirebaseAuth.instance.currentUser;
+      }
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
 
@@ -72,8 +80,16 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     try {
-      await FirebaseAuth.instance.signInAnonymously();
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInAnonymously();
       Navigator.pop(context);
+
+      User? user = userCredential.user;
+      print(user);
+
+      if (user != null) {
+        user = FirebaseAuth.instance.currentUser;
+      }
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
 
@@ -127,14 +143,14 @@ class _LoginPageState extends State<LoginPage> {
                 TextFormField(
                   controller: emailController,
                   decoration: InputDecoration(
-                    hintText: 'Correo electrónico',
+                    labelText: 'Correo electrónico',
                   ),
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
                   controller: passwordController,
                   decoration: InputDecoration(
-                    hintText: 'Contraseña',
+                    labelText: 'Contraseña',
                   ),
                   obscureText: true,
                 ),

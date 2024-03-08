@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:cognitiveroulletegame/constans.dart';
@@ -18,6 +19,8 @@ class GamePage extends StatefulWidget {
 }
 
 class _GamePageState extends State<GamePage> {
+  Color _currentColor = Colors.blue; // Color inicial
+  Timer? _timer;
   String _connectionStatus = 'Unknown';
   // PageController
   final _controller = PageController(viewportFraction: 0.8);
@@ -40,6 +43,29 @@ class _GamePageState extends State<GamePage> {
 
     _initConnectivity();
     _subscribeToConnectivityChanges();
+    // Iniciar el temporizador
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      _changeColor(); // Cambiar el color cada n segundos
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // Cancelar el temporizador al salir de la pantalla
+    super.dispose();
+  }
+
+  void _changeColor() {
+    setState(() {
+      // Cambiar el color a un color aleatorio
+      _currentColor = _getRandomColor();
+    });
+  }
+
+  Color _getRandomColor() {
+    // Generar un color aleatorio
+    final Random random = Random();
+    return colorList[random.nextInt(5)];
   }
 
   Future<void> _initConnectivity() async {
@@ -114,9 +140,11 @@ class _GamePageState extends State<GamePage> {
                     InkWell(
                       onTap: () {
                         getRandomInt();
+
+                        print(colorList[randomNum] == _currentColor);
                       },
                       child: Container(
-                        color: colorList[randomNum],
+                        color: _currentColor,
                         width: 100.0,
                         height: 100.0,
                         decoration: BoxDecoration(

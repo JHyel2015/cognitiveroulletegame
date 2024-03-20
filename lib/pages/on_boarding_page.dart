@@ -89,53 +89,57 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
       ),
     ];
 
-    return SafeArea(
+    return Container(
+      color: kColorSecondary,
+      child: SafeArea(
         child: IntroductionScreen(
-      key: introKey,
-      pages: _onBoardingList,
-      onDone: () => _onIntroEnd(context),
-      showSkipButton: true,
-      skip: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AuthPage(),
+          key: introKey,
+          pages: _onBoardingList,
+          onDone: () => _onIntroEnd(context),
+          showSkipButton: true,
+          skip: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AuthPage(),
+                ),
+              );
+            },
+            child: Text('Saltar'),
+          ),
+          next: Container(
+            padding: EdgeInsets.all(10),
+            child: Icon(
+              Icons.arrow_forward_ios,
+              color: kColorSecondary,
             ),
-          );
-        },
-        child: Text('Saltar'),
-      ),
-      next: Container(
-        padding: EdgeInsets.all(10),
-        child: Icon(
-          Icons.arrow_forward_ios,
-          color: kColorSecondary,
-        ),
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(25), color: kColorPrimary),
-      ),
-      done: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AuthPage(),
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25), color: kColorPrimary),
+          ),
+          done: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AuthPage(),
+                ),
+              );
+            },
+            child: Text('Hecho'),
+          ),
+          dotsDecorator: DotsDecorator(
+            size: Size(10.0, 10.0),
+            // color: theme.primaryColor,
+            activeSize: Size(22.0, 10.0),
+            activeShape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(25.0),
             ),
-          );
-        },
-        child: Text('Hecho'),
-      ),
-      dotsDecorator: DotsDecorator(
-        size: Size(10.0, 10.0),
-        // color: theme.primaryColor,
-        activeSize: Size(22.0, 10.0),
-        activeShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(25.0),
+            activeColor: theme.primaryColor,
+          ),
         ),
-        activeColor: theme.primaryColor,
       ),
-    ));
+    );
   }
 
   _onIntroEnd(BuildContext context) {

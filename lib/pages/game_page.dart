@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
+import 'package:cognitiveroulletegame/pages/home_page.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -27,6 +28,11 @@ class _GamePageState extends State<GamePage> {
   // TextController
 
   final user = FirebaseAuth.instance.currentUser;
+  int isTappedOut = 0;
+  int isCorrect = 0;
+  int randomNum = 0;
+  int scoreMax = 4;
+  int currentScore = 0;
 
   bool _btnActive = false;
 
@@ -65,7 +71,7 @@ class _GamePageState extends State<GamePage> {
   Color _getRandomColor() {
     // Generar un color aleatorio
     final Random random = Random();
-    return colorList[random.nextInt(5)];
+    return colorList[random.nextInt(4)];
   }
 
   Future<void> _initConnectivity() async {
@@ -101,12 +107,10 @@ class _GamePageState extends State<GamePage> {
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
-    int randomNum = 0;
-    int randomNum2 = 0;
 
     void getRandomInt() {
       final random = Random();
-      int number = random.nextInt(5);
+      int number = random.nextInt(4);
       setState(() {
         randomNum = number;
       });
@@ -126,28 +130,38 @@ class _GamePageState extends State<GamePage> {
             ),
             const SizedBox(height: 15),
             Text(
-              'Puntaje',
+              '${currentScore}/${scoreMax}',
               style: TextStyle(
                 fontSize: 24,
               ),
             ),
             const SizedBox(height: 15),
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Column(
                   children: [
                     Text('Seleccionaste'),
                     InkWell(
                       onTap: () {
-                        getRandomInt();
+                        isTappedOut = 1;
 
-                        print(colorList[randomNum] == _currentColor);
+                        if (colorList[randomNum] == _currentColor) {
+                          setState(() {
+                            isCorrect = 1;
+                            currentScore += 1;
+                            if (currentScore == scoreMax) {
+                              currentScore = 0;
+                            }
+                          });
+                          getRandomInt();
+                        }
                       },
                       child: Container(
-                        color: _currentColor,
-                        width: 100.0,
-                        height: 100.0,
+                        width: 125.0,
+                        height: 125.0,
                         decoration: BoxDecoration(
+                          color: _currentColor,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -156,25 +170,37 @@ class _GamePageState extends State<GamePage> {
                 ),
                 const SizedBox(width: 15),
                 Container(
-                  color: colorList[randomNum],
-                  width: 120.0,
-                  height: 120.0,
+                  width: 150.0,
+                  height: 150.0,
                   decoration: BoxDecoration(
+                    color: colorList[randomNum],
                     shape: BoxShape.circle,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 25),
+            // if (isCorrect == 1)
+            //   Center(
+            //     child: Text('CORRECTO'),
+            //   ),
+            const SizedBox(height: 15),
             Image.asset('assets/robot.gif'),
-            const SizedBox(height: 25),
+            const SizedBox(height: 15),
             IconButton(
               style: TextButton.styleFrom(
                 backgroundColor: kColorPrimary,
               ),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HomePage(),
+                  ),
+                );
+              },
               icon: Icon(
-                Icons.list,
+                Icons.home_outlined,
                 color: kColorSecondary,
               ),
             )

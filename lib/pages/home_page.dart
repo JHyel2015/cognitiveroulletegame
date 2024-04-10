@@ -2,6 +2,7 @@
 
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
+import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/game_page.dart';
 import 'package:cognitiveroulletegame/pages/levels_page.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -130,7 +131,7 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(
                     // builder: (context) => LevelsPage(),
-                    builder: (context) => GamePage(),
+                    builder: (context) => DivinerPage(),
                   ),
                 );
               },

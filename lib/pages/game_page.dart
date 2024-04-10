@@ -1,19 +1,35 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
+import 'package:cognitiveroulletegame/shared/function.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
+import 'package:path_provider/path_provider.dart';
+
+import 'package:image/image.dart' as img;
+import 'package:flutter_image_filters/flutter_image_filters.dart';
 
 class GamePage extends StatefulWidget {
-  const GamePage({super.key});
+  String title;
+  String textToSpeak;
+  GamePage({
+    required this.title,
+    required this.textToSpeak,
+    super.key,
+  });
 
   @override
   State<GamePage> createState() => _GamePageState();
@@ -28,6 +44,7 @@ class _GamePageState extends State<GamePage> {
   // TextController
 
   final user = FirebaseAuth.instance.currentUser;
+  final DataSource dataSource = DataSource();
   int isTappedOut = 0;
   int isCorrect = 0;
   int randomNum = 0;
@@ -43,16 +60,35 @@ class _GamePageState extends State<GamePage> {
     Colors.yellow,
   ];
 
+  late TextureSource texture;
+  late BrightnessShaderConfiguration configuration;
+  bool textureLoaded = false;
+
+  Future<void> _speak() async {
+    await dataSource.speak(widget.textToSpeak);
+  }
+
   @override
   void initState() {
     super.initState();
 
+    _speak();
     _initConnectivity();
     _subscribeToConnectivityChanges();
     // Iniciar el temporizador
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      _changeColor(); // Cambiar el color cada n segundos
-    });
+    // _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    //   _changeColor(); // Cambiar el color cada n segundos
+    // });
+
+    configuration = BrightnessShaderConfiguration();
+    configuration.brightness = 0.5;
+    TextureSource.fromAsset('assets/roulette.png')
+        .then((value) => texture = value)
+        .whenComplete(
+          () => setState(() {
+            textureLoaded = true;
+          }),
+        );
   }
 
   @override
@@ -106,6 +142,7 @@ class _GamePageState extends State<GamePage> {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
 
     void getRandomInt() {
@@ -117,75 +154,149 @@ class _GamePageState extends State<GamePage> {
     }
 
     return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(widget.title),
+        actions: [
+          IconButton(
+            onPressed: _speak,
+            icon: Icon(
+              Icons.volume_up,
+              color: kColorPrimary,
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 25),
+            Container(
+              padding: const EdgeInsets.all(10.0),
+              margin: EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: Colors.blueAccent),
+              ),
+              child: Text(
+                widget.textToSpeak,
+                style: TextStyle(
+                  fontSize: 15,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 15),
             Text(
               'Puntaje',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 20,
               ),
             ),
             const SizedBox(height: 15),
             Text(
               '${currentScore}/${scoreMax}',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 20,
               ),
             ),
             const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Column(
-                  children: [
-                    Text('Seleccionaste'),
-                    InkWell(
-                      onTap: () {
-                        isTappedOut = 1;
-
-                        if (colorList[randomNum] == _currentColor) {
-                          setState(() {
-                            isCorrect = 1;
-                            currentScore += 1;
-                            if (currentScore == scoreMax) {
-                              currentScore = 0;
-                            }
-                          });
-                          getRandomInt();
-                        }
-                      },
-                      child: Container(
-                        width: 125.0,
-                        height: 125.0,
-                        decoration: BoxDecoration(
-                          color: _currentColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-                const SizedBox(width: 15),
-                Container(
-                  width: 150.0,
-                  height: 150.0,
-                  decoration: BoxDecoration(
-                    color: colorList[randomNum],
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ],
+            FutureBuilder<Uint8List>(
+              future: _getSilhouette('assets/dress.webp'),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Image.memory(
+                    snapshot.data!,
+                    width: 150,
+                    height: 150,
+                  );
+                } else if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                } else {
+                  return CircularProgressIndicator();
+                }
+              },
             ),
+            const SizedBox(height: 15),
+            Expanded(
+              child: GridView.count(
+                crossAxisSpacing: 5,
+                crossAxisCount: 2,
+                children: [
+                  InkWell(
+                    onTap: () {},
+                    child: Image.asset(
+                      'assets/roulette.png',
+                      width: width * .5,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {},
+                    child: Image.asset(
+                      'assets/dress.webp',
+                      width: width * .5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 15),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.center,
+            //   children: [
+            //     Column(
+            //       children: [
+            //         Text('Seleccionaste'),
+            //         InkWell(
+            //           onTap: () {
+            //             // isTappedOut = 1;
+
+            //             // if (colorList[randomNum] == _currentColor) {
+            //             //   setState(() {
+            //             //     isCorrect = 1;
+            //             //     currentScore += 1;
+            //             //     if (currentScore == scoreMax) {
+            //             //       currentScore = 0;
+            //             //     }
+            //             //   });
+            //             //   getRandomInt();
+            //             // }
+            //           },
+            //           child: Container(
+            //             width: 125.0,
+            //             height: 125.0,
+            //             decoration: BoxDecoration(
+            //               color: _currentColor,
+            //               shape: BoxShape.circle,
+            //             ),
+            //           ),
+            //         )
+            //       ],
+            //     ),
+            //     const SizedBox(width: 15),
+            //     Container(
+            //       width: 150.0,
+            //       height: 150.0,
+            //       decoration: BoxDecoration(
+            //         color: colorList[randomNum],
+            //         shape: BoxShape.circle,
+            //       ),
+            //     ),
+            //   ],
+            // ),
             const SizedBox(height: 25),
             // if (isCorrect == 1)
             //   Center(
             //     child: Text('CORRECTO'),
             //   ),
             const SizedBox(height: 15),
-            Image.asset('assets/robot.gif'),
+            Image.asset(
+              'assets/robot.gif',
+              width: width * .25,
+            ),
             const SizedBox(height: 15),
             IconButton(
               style: TextButton.styleFrom(
@@ -209,4 +320,34 @@ class _GamePageState extends State<GamePage> {
       ),
     );
   }
+}
+
+Future<Uint8List> _getSilhouette(String path) async {
+  // Load the image from network
+  img.Image? image =
+      img.decodeImage((await rootBundle.load(path)).buffer.asUint8List());
+
+  // Convert to grayscale
+  image = img.grayscale(image!);
+
+  // Apply thresholding to obtain silhouette
+  img.contrast(image, contrast: 0);
+
+  // Convert to bytes
+  return Uint8List.fromList(img.encodePng(image));
+}
+
+Future<Uint8List> _getShadow(String path) async {
+  // Load the image from network
+  img.Image? image =
+      img.decodeImage((await rootBundle.load(path)).buffer.asUint8List());
+
+  // Convert to grayscale
+  image = img.grayscale(image!);
+
+  // Apply thresholding to obtain silhouette
+  img.luminanceThreshold(image);
+
+  // Convert to bytes
+  return Uint8List.fromList(img.encodePng(image));
 }

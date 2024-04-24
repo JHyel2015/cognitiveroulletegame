@@ -32,4 +32,10 @@ class UserPreferences {
   set firstTime(bool value) {
     _preferences.setBool('firstTime', value);
   }
+
+  bool get isMute => _preferences.getBool('isMute') ?? false;
+
+  set isMute(bool value) {
+    _preferences.setBool('isMute', value);
+  }
 }

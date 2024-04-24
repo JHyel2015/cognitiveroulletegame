@@ -12,6 +12,7 @@ class AuthPage extends StatelessWidget {
     final userPreferences = UserPreferences();
 
     userPreferences.firstTime = false;
+    userPreferences.isMute = false;
     return Scaffold(
       body: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),

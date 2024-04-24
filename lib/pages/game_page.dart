@@ -9,7 +9,7 @@ import 'dart:ui' as ui;
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
-import 'package:cognitiveroulletegame/shared/function.dart';
+import 'package:cognitiveroulletegame/shared/function_source.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -44,7 +44,7 @@ class _GamePageState extends State<GamePage> {
   // TextController
 
   final user = FirebaseAuth.instance.currentUser;
-  final DataSource dataSource = DataSource();
+  final FunctionSource dataSource = FunctionSource();
   int isTappedOut = 0;
   int isCorrect = 0;
   int randomNum = 0;
@@ -223,6 +223,7 @@ class _GamePageState extends State<GamePage> {
             const SizedBox(height: 15),
             Expanded(
               child: GridView.count(
+                physics: NeverScrollableScrollPhysics(),
                 crossAxisSpacing: 5,
                 crossAxisCount: 2,
                 children: [

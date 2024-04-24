@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class User {
+class UserData {
   int? id;
   String? name;
   String displayName;
@@ -10,7 +10,7 @@ class User {
   int synced;
   DateTime timestamp;
 
-  User({
+  UserData({
     this.id,
     this.name,
     required this.displayName,
@@ -21,8 +21,8 @@ class User {
     required this.timestamp,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
+  factory UserData.fromJson(Map<String, dynamic> json) {
+    return UserData(
       id: json['id'] as int,
       name: json['name'] as String,
       displayName: json['displayName'] as String,
@@ -47,8 +47,8 @@ class User {
     };
   }
 
-  factory User.fromQuery(QueryDocumentSnapshot<Object?> doc) {
-    return User(
+  factory UserData.fromQuery(QueryDocumentSnapshot<Object?> doc) {
+    return UserData(
       id: doc['id'] as int,
       name: doc['name'] as String,
       displayName: doc['displayName'] as String,

@@ -1,5 +1,5 @@
 import 'package:cognitiveroulletegame/pages/game_page.dart';
-import 'package:cognitiveroulletegame/shared/function.dart';
+import 'package:cognitiveroulletegame/shared/function_source.dart';
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -22,10 +22,23 @@ class IntroGamePage extends StatefulWidget {
 
 class _IntroGamePageState extends State<IntroGamePage> {
   final FlutterTts flutterTts = FlutterTts();
-  final DataSource dataSource = DataSource();
+  final FunctionSource dataSource = FunctionSource();
+
+  // TtsState ttsState = TtsState.stopped;
+
+  // bool get isPlaying => ttsState == TtsState.playing;
+  // bool get isStopped => ttsState == TtsState.stopped;
+  // bool get isPaused => ttsState == TtsState.paused;
+  // bool get isContinued => ttsState == TtsState.continued;
 
   Future<void> _speak() async {
     await dataSource.speak(widget.textToSpeak);
+    // setState(() => ttsState = TtsState.playing);
+  }
+
+  Future _stop() async {
+    await flutterTts.stop();
+    // setState(() => ttsState = TtsState.stopped);
   }
 
   @override
@@ -79,6 +92,7 @@ class _IntroGamePageState extends State<IntroGamePage> {
             ),
             ElevatedButton(
               onPressed: () {
+                _stop();
                 Navigator.push(
                   context,
                   MaterialPageRoute(

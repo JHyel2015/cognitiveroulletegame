@@ -13,6 +13,12 @@ class DivinerPage extends StatefulWidget {
 
 class _DivinerPageState extends State<DivinerPage> {
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(

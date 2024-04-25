@@ -1,6 +1,8 @@
 import 'package:cognitiveroulletegame/pages/game_page.dart';
-import 'package:cognitiveroulletegame/shared/function_source.dart';
+import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/shared/user_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'package:flutter/material.dart';
@@ -22,7 +24,10 @@ class IntroGamePage extends StatefulWidget {
 
 class _IntroGamePageState extends State<IntroGamePage> {
   final FlutterTts flutterTts = FlutterTts();
-  final FunctionSource dataSource = FunctionSource();
+  final SpeakerService speakerService = SpeakerService();
+  final UserPreferences userPreferences = UserPreferences();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? _user;
 
   // TtsState ttsState = TtsState.stopped;
 
@@ -32,13 +37,20 @@ class _IntroGamePageState extends State<IntroGamePage> {
   // bool get isContinued => ttsState == TtsState.continued;
 
   Future<void> _speak() async {
-    await dataSource.speak(widget.textToSpeak);
+    await speakerService.speak(widget.textToSpeak);
     // setState(() => ttsState = TtsState.playing);
   }
 
   Future _stop() async {
-    await flutterTts.stop();
+    await speakerService.stop();
     // setState(() => ttsState = TtsState.stopped);
+  }
+
+  void _getCurrentUser() {
+    User? user = _auth.currentUser;
+    setState(() {
+      _user = user;
+    });
   }
 
   @override
@@ -46,6 +58,7 @@ class _IntroGamePageState extends State<IntroGamePage> {
     // TODO: implement initState
     super.initState();
     _speak();
+    _getCurrentUser();
   }
 
   @override
@@ -53,65 +66,116 @@ class _IntroGamePageState extends State<IntroGamePage> {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(widget.title),
-        actions: [
-          IconButton(
-            onPressed: _speak,
-            icon: Icon(
-              Icons.volume_up,
-              color: kColorPrimary,
-            ),
-          ),
-        ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: width * .8,
-              height: 300,
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.blueAccent),
-              ),
-              child: Center(
-                child: Text(
-                  widget.textToSpeak,
-                  style: TextStyle(fontSize: 25.0),
-                  textAlign: TextAlign.center,
+    return Container(
+      color: kColorSecondary,
+      child: SafeArea(
+        child: Scaffold(
+          appBar: AppBar(
+            centerTitle: true,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text(widget.title),
+            actions: [
+              PopupMenuButton(
+                icon: CircleAvatar(
+                  child: Text('I'),
                 ),
+                itemBuilder: (context) {
+                  return [
+                    PopupMenuItem(
+                      enabled: false,
+                      child: Text(
+                        _user != null
+                            ? _user!.displayName.toString()
+                            : 'Usuario Invitado',
+                      ),
+                    ),
+                  ];
+                },
               ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _stop();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => GamePage(
-                      title: widget.title,
-                      textToSpeak: widget.textToSpeak,
+            ],
+          ),
+          floatingActionButton: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FloatingActionButton(
+                child: userPreferences.isMute
+                    ? Icon(
+                        Icons.voice_over_off,
+                        color: kColorPrimary,
+                      )
+                    : Icon(
+                        Icons.record_voice_over,
+                        color: kColorPrimary,
+                      ),
+                shape: CircleBorder(),
+                onPressed: () {
+                  _stop();
+                  userPreferences.isMute = !userPreferences.isMute;
+                  if (!userPreferences.isMute) {
+                    _speak();
+                  }
+                  setState(() {});
+                },
+              ),
+              SizedBox(
+                width: 5,
+              ),
+              FloatingActionButton(
+                child: Icon(
+                  Icons.volume_up,
+                  color: kColorPrimary,
+                ),
+                shape: CircleBorder(),
+                onPressed: _speak,
+              ),
+            ],
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: width * .8,
+                  height: 300,
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: Colors.blueAccent),
+                  ),
+                  child: Center(
+                    child: Text(
+                      widget.textToSpeak,
+                      style: TextStyle(fontSize: 25.0),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                );
-              },
-              child: Text('Jugar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _stop();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GamePage(
+                          title: widget.title,
+                          textToSpeak: widget.textToSpeak,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text('Continuar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('Regresar'),
+                ),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Atras'),
-            ),
-          ],
+          ),
         ),
       ),
     );

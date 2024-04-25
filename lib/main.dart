@@ -1,3 +1,4 @@
+import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
 import 'package:cognitiveroulletegame/data/game_notifier.dart';
 import 'package:cognitiveroulletegame/data/level_notifier.dart';
@@ -8,6 +9,7 @@ import 'package:cognitiveroulletegame/pages/home_page.dart';
 import 'package:cognitiveroulletegame/pages/on_boarding_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 

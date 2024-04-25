@@ -114,116 +114,119 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 50),
-                Image.asset('assets/splash.gif', height: 99, width: 99),
-                const SizedBox(height: 25),
-                Text(
-                  'Cognitive Game',
-                  style: TextStyle(
-                    fontSize: 24,
+    return Container(
+      color: kColorSecondary,
+      child: SafeArea(
+        child: Scaffold(
+          body: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 20),
+                  Image.asset('assets/splash.gif', height: 99, width: 99),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Cognitive Game',
+                    style: TextStyle(
+                      fontSize: 24,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 50),
-                Text(
-                  'Bienvenido de vuelta',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 50),
+                  Text(
+                    'Bienvenido de vuelta',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 25),
-                TextFormField(
-                  controller: emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Correo electrónico',
+                  const SizedBox(height: 25),
+                  TextFormField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Correo electrónico',
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Contraseña',
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Contraseña',
+                    ),
+                    obscureText: true,
                   ),
-                  obscureText: true,
-                ),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 25.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 25.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text('¿Olvidaste tu contraseña?'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 25),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      minimumSize: Size.fromHeight(50),
+                      backgroundColor: kColorPrimary,
+                    ),
+                    onPressed: signUserIn,
+                    child: Text(
+                      'Iniciar sesión',
+                      style: TextStyle(color: kColorSecondary),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('¿Olvidaste tu contraseña?'),
+                      OutlinedButton(
+                        style: TextButton.styleFrom(
+                          minimumSize: Size.fromHeight(50),
+                          side: BorderSide(width: 1.0, color: kColorPrimary),
+                        ),
+                        onPressed: signUserWithGoogle,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset('assets/google.png',
+                                height: 25, width: 25),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Ingresar con Google',
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      OutlinedButton(
+                        style: TextButton.styleFrom(
+                          minimumSize: Size.fromHeight(50),
+                          side: BorderSide(width: 1.0, color: kColorPrimary),
+                        ),
+                        onPressed: signInAnonymously,
+                        child: Text(
+                          'Ingresar como invitado',
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 25),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    minimumSize: Size.fromHeight(50),
-                    backgroundColor: kColorPrimary,
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('¿No tienes cuenta?'),
+                      const SizedBox(height: 4),
+                      CupertinoButton(
+                        onPressed: widget.onPressed,
+                        child: Text('Regístrate ahora'),
+                      ),
+                    ],
                   ),
-                  onPressed: signUserIn,
-                  child: Text(
-                    'Iniciar sesión',
-                    style: TextStyle(color: kColorSecondary),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    OutlinedButton(
-                      style: TextButton.styleFrom(
-                        minimumSize: Size.fromHeight(50),
-                        side: BorderSide(width: 1.0, color: kColorPrimary),
-                      ),
-                      onPressed: signUserWithGoogle,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset('assets/google.png',
-                              height: 25, width: 25),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Ingresar con Google',
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    OutlinedButton(
-                      style: TextButton.styleFrom(
-                        minimumSize: Size.fromHeight(50),
-                        side: BorderSide(width: 1.0, color: kColorPrimary),
-                      ),
-                      onPressed: signInAnonymously,
-                      child: Text(
-                        'Ingresar como invitado',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('¿No tienes cuenta?'),
-                    const SizedBox(height: 4),
-                    CupertinoButton(
-                      onPressed: widget.onPressed,
-                      child: Text('Regístrate ahora'),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

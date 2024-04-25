@@ -9,12 +9,15 @@ import 'dart:ui' as ui;
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
-import 'package:cognitiveroulletegame/shared/function_source.dart';
+import 'package:cognitiveroulletegame/services/speaker_service.dart';
+import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart' as http;
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
@@ -39,12 +42,14 @@ class _GamePageState extends State<GamePage> {
   Color _currentColor = Colors.blue; // Color inicial
   Timer? _timer;
   String _connectionStatus = 'Unknown';
+  int nElements = 3;
   // PageController
   final _controller = PageController(viewportFraction: 0.8);
   // TextController
+  final UserPreferences userPreferences = UserPreferences();
 
   final user = FirebaseAuth.instance.currentUser;
-  final FunctionSource dataSource = FunctionSource();
+  final SpeakerService speakerService = SpeakerService();
   int isTappedOut = 0;
   int isCorrect = 0;
   int randomNum = 0;
@@ -52,6 +57,9 @@ class _GamePageState extends State<GamePage> {
   int currentScore = 0;
 
   bool _btnActive = false;
+
+  List<String> fileURLs = [];
+  List<String> randomFileURLs = [];
 
   List<Color> colorList = [
     Colors.blue,
@@ -65,7 +73,32 @@ class _GamePageState extends State<GamePage> {
   bool textureLoaded = false;
 
   Future<void> _speak() async {
-    await dataSource.speak(widget.textToSpeak);
+    await speakerService.stop();
+    await speakerService.speak(widget.textToSpeak);
+  }
+
+  Future _stop() async {
+    await speakerService.stop();
+    // setState(() => ttsState = TtsState.stopped);
+  }
+
+  Future<void> _getFiles() async {
+    try {
+      ListResult result = await FirebaseStorage.instance.ref().listAll();
+      for (var ref in result.items) {
+        String downloadURL = await ref.getDownloadURL();
+        fileURLs.add(downloadURL);
+      }
+      randomFileURLs = getRandomElements(fileURLs, nElements);
+      setState(() {});
+    } catch (e) {
+      print('Error al obtener los archivos del bucket de Firebase Storage: $e');
+    }
+  }
+
+  List<T> getRandomElements<T>(List<T> list, int n) {
+    list.shuffle();
+    return list.take(n).toList();
   }
 
   @override
@@ -73,6 +106,7 @@ class _GamePageState extends State<GamePage> {
     super.initState();
 
     _speak();
+    _getFiles();
     _initConnectivity();
     _subscribeToConnectivityChanges();
     // Iniciar el temporizador
@@ -89,6 +123,12 @@ class _GamePageState extends State<GamePage> {
             textureLoaded = true;
           }),
         );
+
+    getRandomInt();
+
+    Future.delayed(Duration(seconds: 15), () {
+      print('Se cumplio el tiempo');
+    });
   }
 
   @override
@@ -140,183 +180,145 @@ class _GamePageState extends State<GamePage> {
     });
   }
 
+  void getRandomInt() {
+    final random = Random();
+    int number = random.nextInt(3);
+    setState(() {
+      randomNum = number;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
 
-    void getRandomInt() {
-      final random = Random();
-      int number = random.nextInt(4);
-      setState(() {
-        randomNum = number;
-      });
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(widget.title),
-        actions: [
-          IconButton(
-            onPressed: _speak,
-            icon: Icon(
-              Icons.volume_up,
-              color: kColorPrimary,
-            ),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10.0),
-              margin: EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.blueAccent),
+    return Container(
+      color: kColorSecondary,
+      child: SafeArea(
+        child: Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            centerTitle: true,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text(widget.title),
+            actions: [
+              IconButton(
+                onPressed: () {
+                  _stop();
+                  userPreferences.isMute = !userPreferences.isMute;
+                  if (!userPreferences.isMute) {
+                    _speak();
+                  }
+                },
+                icon: userPreferences.isMute
+                    ? Icon(
+                        Icons.voice_over_off,
+                        color: kColorPrimary,
+                      )
+                    : Icon(
+                        Icons.record_voice_over,
+                        color: kColorPrimary,
+                      ),
               ),
-              child: Text(
-                widget.textToSpeak,
-                style: TextStyle(
-                  fontSize: 15,
+              IconButton(
+                onPressed: _speak,
+                icon: Icon(
+                  Icons.volume_up,
+                  color: kColorPrimary,
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(height: 15),
-            Text(
-              'Puntaje',
-              style: TextStyle(
-                fontSize: 20,
-              ),
-            ),
-            const SizedBox(height: 15),
-            Text(
-              '${currentScore}/${scoreMax}',
-              style: TextStyle(
-                fontSize: 20,
-              ),
-            ),
-            const SizedBox(height: 15),
-            FutureBuilder<Uint8List>(
-              future: _getSilhouette('assets/dress.webp'),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return Image.memory(
-                    snapshot.data!,
-                    width: 150,
-                    height: 150,
-                  );
-                } else if (snapshot.hasError) {
-                  return Text('Error: ${snapshot.error}');
-                } else {
-                  return CircularProgressIndicator();
-                }
-              },
-            ),
-            const SizedBox(height: 15),
-            Expanded(
-              child: GridView.count(
-                physics: NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 5,
-                crossAxisCount: 2,
-                children: [
-                  InkWell(
-                    onTap: () {},
-                    child: Image.asset(
-                      'assets/roulette.png',
-                      width: width * .5,
+            ],
+          ),
+          body: Stack(
+            alignment: AlignmentDirectional.center,
+            children: [
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10.0),
+                      margin: EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(color: Colors.blueAccent),
+                      ),
+                      child: Text(
+                        widget.textToSpeak,
+                        style: TextStyle(
+                          fontSize: 15,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
-                  InkWell(
-                    onTap: () {},
-                    child: Image.asset(
-                      'assets/dress.webp',
-                      width: width * .5,
-                    ),
-                  ),
-                ],
+                    const SizedBox(height: 15),
+                    if (randomFileURLs.isNotEmpty)
+                      Expanded(
+                        child: GridView.count(
+                          physics: NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: 5,
+                          crossAxisCount: 2,
+                          children: [
+                            FutureBuilder<Uint8List>(
+                              future: _getSilhouette(randomFileURLs[randomNum]),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Image.memory(
+                                    snapshot.data!,
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return Text('Error: ${snapshot.error}');
+                                } else {
+                                  return CircularProgressIndicator();
+                                }
+                              },
+                            ),
+                            ...randomFileURLs.map(
+                              (e) {
+                                return Image.network(e);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 15),
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.center,
-            //   children: [
-            //     Column(
-            //       children: [
-            //         Text('Seleccionaste'),
-            //         InkWell(
-            //           onTap: () {
-            //             // isTappedOut = 1;
-
-            //             // if (colorList[randomNum] == _currentColor) {
-            //             //   setState(() {
-            //             //     isCorrect = 1;
-            //             //     currentScore += 1;
-            //             //     if (currentScore == scoreMax) {
-            //             //       currentScore = 0;
-            //             //     }
-            //             //   });
-            //             //   getRandomInt();
-            //             // }
-            //           },
-            //           child: Container(
-            //             width: 125.0,
-            //             height: 125.0,
-            //             decoration: BoxDecoration(
-            //               color: _currentColor,
-            //               shape: BoxShape.circle,
-            //             ),
-            //           ),
-            //         )
-            //       ],
-            //     ),
-            //     const SizedBox(width: 15),
-            //     Container(
-            //       width: 150.0,
-            //       height: 150.0,
-            //       decoration: BoxDecoration(
-            //         color: colorList[randomNum],
-            //         shape: BoxShape.circle,
-            //       ),
-            //     ),
-            //   ],
-            // ),
-            const SizedBox(height: 25),
-            // if (isCorrect == 1)
-            //   Center(
-            //     child: Text('CORRECTO'),
-            //   ),
-            const SizedBox(height: 15),
-            Image.asset(
-              'assets/robot.gif',
-              width: width * .25,
-            ),
-            const SizedBox(height: 15),
-            IconButton(
-              style: TextButton.styleFrom(
-                backgroundColor: kColorPrimary,
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HomePage(),
+              Positioned(
+                left: 10,
+                bottom: 10,
+                child: InkWell(
+                  onTap: _speak,
+                  child: Image.asset(
+                    'assets/robot.gif',
+                    width: width * .25,
                   ),
-                );
-              },
-              icon: Icon(
-                Icons.home_outlined,
-                color: kColorSecondary,
+                ),
               ),
-            )
-          ],
+              Positioned(
+                bottom: 10,
+                child: IconButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: kColorPrimary,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HomePage(),
+                      ),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.home_outlined,
+                    color: kColorSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -325,8 +327,10 @@ class _GamePageState extends State<GamePage> {
 
 Future<Uint8List> _getSilhouette(String path) async {
   // Load the image from network
-  img.Image? image =
-      img.decodeImage((await rootBundle.load(path)).buffer.asUint8List());
+
+  http.Response response = await http.get(Uri.parse(path));
+
+  img.Image? image = img.decodeImage(response.bodyBytes);
 
   // Convert to grayscale
   image = img.grayscale(image!);

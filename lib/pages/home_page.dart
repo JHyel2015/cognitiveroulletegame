@@ -5,10 +5,12 @@ import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/game_page.dart';
 import 'package:cognitiveroulletegame/pages/levels_page.dart';
+import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -23,8 +25,9 @@ class _HomePageState extends State<HomePage> {
   // PageController
   final _controller = PageController(viewportFraction: 0.8);
   // TextController
-
-  final user = FirebaseAuth.instance.currentUser;
+  final UserPreferences _userPreferences = UserPreferences();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? _user;
 
   bool _btnActive = false;
 
@@ -32,8 +35,16 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
+    _getCurrentUser();
     _initConnectivity();
     _subscribeToConnectivityChanges();
+  }
+
+  void _getCurrentUser() {
+    User? user = _auth.currentUser;
+    setState(() {
+      _user = user;
+    });
   }
 
   Future<void> _initConnectivity() async {
@@ -80,78 +91,79 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: signUserOut,
-            icon: Icon(
-              Icons.logout,
-              color: kColorPrimary,
-            ),
+    _userPreferences.isAnonymous = _user != null ? _user!.isAnonymous : false;
+
+    return Container(
+      color: kColorSecondary,
+      child: SafeArea(
+        child: Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            actions: [
+              IconButton(
+                onPressed: signUserOut,
+                icon: Icon(
+                  Icons.logout,
+                  color: kColorPrimary,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 25),
-            Text(
-              'Cognitive Game',
-              style: TextStyle(
-                fontSize: 24,
+          body: Stack(
+            children: [
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Cognitive Game',
+                      style: TextStyle(
+                        fontSize: 24,
+                      ),
+                    ),
+                    Image.asset('assets/splash.gif', height: 300, width: 300),
+                    const SizedBox(height: 10),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: kColorPrimary,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            // builder: (context) => LevelsPage(),
+                            builder: (context) => DivinerPage(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'JUGAR',
+                        style: TextStyle(color: kColorSecondary),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    IconButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: kColorPrimary,
+                      ),
+                      onPressed: () {},
+                      icon: Icon(
+                        Icons.list,
+                        color: kColorSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Image.asset('assets/splash.gif'),
-            Text(
-              'Puntaje más alto',
-              style: TextStyle(
-                fontSize: 24,
+              Positioned(
+                left: 10,
+                bottom: 10,
+                child: Image.asset('assets/EPN.png', height: 50, width: 50),
               ),
-            ),
-            const SizedBox(height: 25),
-            Text(
-              '10',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 40),
-            TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: kColorPrimary,
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    // builder: (context) => LevelsPage(),
-                    builder: (context) => DivinerPage(),
-                  ),
-                );
-              },
-              child: Text(
-                'JUGAR',
-                style: TextStyle(color: kColorSecondary),
-              ),
-            ),
-            const SizedBox(height: 10),
-            IconButton(
-              style: TextButton.styleFrom(
-                backgroundColor: kColorPrimary,
-              ),
-              onPressed: () {},
-              icon: Icon(
-                Icons.list,
-                color: kColorSecondary,
-              ),
-            )
-          ],
+            ],
+          ),
         ),
       ),
     );

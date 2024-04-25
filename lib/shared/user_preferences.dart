@@ -38,4 +38,10 @@ class UserPreferences {
   set isMute(bool value) {
     _preferences.setBool('isMute', value);
   }
+
+  bool get isAnonymous => _preferences.getBool('isAnonymous') ?? false;
+
+  set isAnonymous(bool value) {
+    _preferences.setBool('isAnonymous', value);
+  }
 }

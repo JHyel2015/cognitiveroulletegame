@@ -27,15 +27,18 @@ class GameCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: double.infinity,
-            height: 200,
-            decoration: BoxDecoration(
-              color: this.color,
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Center(
-              child: Text(this.name),
+          InkWell(
+            onTap: () {},
+            child: Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                color: this.color,
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Center(
+                child: Text(this.name),
+              ),
             ),
           ),
           TextButton(

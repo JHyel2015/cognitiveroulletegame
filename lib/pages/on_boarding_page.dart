@@ -1,6 +1,8 @@
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
+import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 
 class OnBoardingPage extends StatefulWidget {
@@ -12,6 +14,25 @@ class OnBoardingPage extends StatefulWidget {
 
 class _OnBoardingPageState extends State<OnBoardingPage> {
   final introKey = GlobalKey<IntroductionScreenState>();
+  final SpeakerService speakerService = SpeakerService();
+
+  final List<String> _bodies = [
+    '¡Hola! Estamos emocionados de tenerte con nosotros. En Cognitive Game, te embarcarás en un emocionante viaje para mejorar tus habilidades cognitivas mientras exploras el fascinante mundo de los colores.',
+    'Nuestra aplicación ofrece una variedad de juegos diseñados para enseñarte los colores de manera divertida, hay mucho por descubrir.',
+    'La aplicación realiza un seguimiento de tu progreso a medida que avanzas en los juegos.',
+    'Personaliza tu experiencia de juego ajustando la configuración según tus preferencias.',
+  ];
+
+  Future<void> _speak(String textToSpeak) async {
+    await speakerService.speak(textToSpeak);
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _speak(_bodies[0]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,16 +47,15 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
     List<PageViewModel> _onBoardingList = [
       PageViewModel(
         title: 'Bienvenido',
-        body:
-            '¡Hola! Estamos emocionados de tenerte con nosotros. En Cognitive Game, te embarcarás en un emocionante viaje para mejorar tus habilidades cognitivas mientras exploras el fascinante mundo de los colores.',
+        body: _bodies[0],
         image: Padding(
-          padding: const EdgeInsets.all(15.0),
+          padding: const EdgeInsets.symmetric(horizontal: 15.0),
           child: Align(
-            alignment: Alignment.bottomCenter,
+            alignment: Alignment.center,
             child: Column(
               children: [
-                Image.asset('assets/splash.gif', height: 200, width: 200),
-                const SizedBox(height: 25),
+                Image.asset('assets/splash.gif', height: 150, width: 150),
+                const SizedBox(height: 20),
                 Text(
                   'Cognitive Game',
                   style: TextStyle(
@@ -50,8 +70,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
       ),
       PageViewModel(
         title: 'Explora los Niveles',
-        body:
-            'Nuestra aplicación ofrece una variedad de juegos diseñados para enseñarte los colores de manera divertida, hay mucho por descubrir.',
+        body: _bodies[1],
         image: Padding(
           padding: const EdgeInsets.all(15.0),
           child: Align(
@@ -63,8 +82,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
       ),
       PageViewModel(
         title: 'Seguimiento de Progreso',
-        body:
-            'La aplicación realiza un seguimiento de tu progreso a medida que avanzas en los juegos.',
+        body: _bodies[2],
         image: Padding(
           padding: const EdgeInsets.all(15.0),
           child: Align(
@@ -76,8 +94,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
       ),
       PageViewModel(
         title: 'Configuración Personalizada',
-        body:
-            'Personaliza tu experiencia de juego ajustando la configuración según tus preferencias.',
+        body: _bodies[3],
         image: Padding(
           padding: const EdgeInsets.all(15.0),
           child: Align(
@@ -92,50 +109,31 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
     return Container(
       color: kColorSecondary,
       child: SafeArea(
-        child: IntroductionScreen(
-          key: introKey,
-          pages: _onBoardingList,
-          onDone: () => _onIntroEnd(context),
-          showSkipButton: true,
-          skip: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AuthPage(),
-                ),
-              );
+        child: Center(
+          child: IntroductionScreen(
+            key: introKey,
+            pages: _onBoardingList,
+            onDone: () {
+              speakerService.stop();
+              _onIntroEnd(context);
             },
-            child: Text('Saltar'),
-          ),
-          next: Container(
-            padding: EdgeInsets.all(10),
-            child: Icon(
-              Icons.arrow_forward_ios,
-              color: kColorSecondary,
-            ),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25), color: kColorPrimary),
-          ),
-          done: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AuthPage(),
-                ),
-              );
+            onChange: (page) {
+              speakerService.stop();
+              speakerService.speak(_bodies[page]);
             },
-            child: Text('Hecho'),
-          ),
-          dotsDecorator: DotsDecorator(
-            size: Size(10.0, 10.0),
-            // color: theme.primaryColor,
-            activeSize: Size(22.0, 10.0),
-            activeShape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25.0),
+            showSkipButton: true,
+            skip: Text('Saltar'),
+            next: Icon(Icons.arrow_forward_ios),
+            done: Text('Hecho'),
+            dotsDecorator: DotsDecorator(
+              size: Size(10.0, 10.0),
+              // color: theme.primaryColor,
+              activeSize: Size(22.0, 10.0),
+              activeShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25.0),
+              ),
+              activeColor: theme.primaryColor,
             ),
-            activeColor: theme.primaryColor,
           ),
         ),
       ),

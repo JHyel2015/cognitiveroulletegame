@@ -1,8 +1,6 @@
 import 'package:cognitiveroulletegame/constans.dart';
-import 'package:cognitiveroulletegame/pages/game_page.dart';
 import 'package:cognitiveroulletegame/pages/intro_game_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../components/game_card.dart';
 

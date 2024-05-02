@@ -1,4 +1,3 @@
-import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
 import 'package:cognitiveroulletegame/data/game_notifier.dart';
 import 'package:cognitiveroulletegame/data/level_notifier.dart';

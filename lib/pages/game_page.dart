@@ -1,26 +1,19 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:cognitiveroulletegame/constans.dart';
-import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
-import 'package:flutter/widgets.dart';
-import 'package:provider/provider.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'package:image/image.dart' as img;
 import 'package:flutter_image_filters/flutter_image_filters.dart';

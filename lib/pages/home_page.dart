@@ -3,15 +3,12 @@
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
-import 'package:cognitiveroulletegame/pages/game_page.dart';
-import 'package:cognitiveroulletegame/pages/levels_page.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

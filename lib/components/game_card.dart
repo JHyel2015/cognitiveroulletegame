@@ -28,7 +28,7 @@ class GameCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           InkWell(
-            onTap: () {},
+            onTap: onPressed,
             child: Container(
               width: double.infinity,
               height: 200,
@@ -49,9 +49,18 @@ class GameCard extends StatelessWidget {
             child: Container(
               alignment: Alignment.center,
               width: double.infinity,
-              child: Text(
-                'Jugar',
-                style: TextStyle(color: kColorSecondary),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.play_arrow,
+                    color: kColorSecondary,
+                  ),
+                  Text(
+                    'Jugar',
+                    style: TextStyle(color: kColorSecondary),
+                  ),
+                ],
               ),
             ),
           )

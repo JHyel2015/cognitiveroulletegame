@@ -1,6 +1,8 @@
 import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/data/game_notifier.dart';
 import 'package:cognitiveroulletegame/pages/intro_game_page.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../components/game_card.dart';
 
@@ -20,6 +22,8 @@ class _DivinerPageState extends State<DivinerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final gameNotifier = Provider.of<GameNotifier>(context);
+
     return Container(
       color: kColorSecondary,
       child: SafeArea(
@@ -34,42 +38,28 @@ class _DivinerPageState extends State<DivinerPage> {
             child: Container(
               width: double.infinity,
               height: 300,
-              child: PageView(
+              child: PageView.builder(
+                itemCount: gameNotifier.games.length,
                 controller: PageController(viewportFraction: 0.60),
                 physics: BouncingScrollPhysics(),
-                children: [
-                  GameCard(
+                itemBuilder: (context, index) {
+                  return GameCard(
                     color: Colors.amber,
-                    name: 'Perfiles',
+                    name: gameNotifier.games[index].name,
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => IntroGamePage(
-                            title: 'Perfiles',
-                            textToSpeak:
-                                'Mira la silueta y selecciona la imagen que le corresponde',
+                            gameId: gameNotifier.games[index].id!,
+                            title: gameNotifier.games[index].name,
+                            textToSpeak: gameNotifier.games[index].instructions,
                           ),
                         ),
                       );
                     },
-                  ),
-                  GameCard(
-                    color: Colors.red,
-                    name: 'Luces y sombras',
-                    onPressed: () {},
-                  ),
-                  GameCard(
-                    color: Colors.blue,
-                    name: 'Caras y gestos',
-                    onPressed: () {},
-                  ),
-                  GameCard(
-                    color: Colors.blueGrey,
-                    name: 'Animales',
-                    onPressed: () {},
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),

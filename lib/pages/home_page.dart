@@ -3,6 +3,7 @@
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
+import 'package:cognitiveroulletegame/pages/settings_page.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -122,7 +123,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     Image.asset('assets/splash.gif', height: 300, width: 300),
                     const SizedBox(height: 10),
-                    TextButton(
+                    TextButton.icon(
                       style: TextButton.styleFrom(
                         backgroundColor: kColorPrimary,
                       ),
@@ -135,17 +136,48 @@ class _HomePageState extends State<HomePage> {
                           ),
                         );
                       },
-                      child: Text(
-                        'JUGAR',
+                      label: Text(
+                        'Jugar',
                         style: TextStyle(color: kColorSecondary),
                       ),
+                      icon: Icon(
+                        Icons.play_arrow,
+                        color: kColorSecondary,
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    IconButton(
+                    const SizedBox(height: 5),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        backgroundColor: kColorPrimary,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            // builder: (context) => LevelsPage(),
+                            builder: (context) => SettingsPage(),
+                          ),
+                        );
+                      },
+                      label: Text(
+                        'Ajustes',
+                        style: TextStyle(color: kColorSecondary),
+                      ),
+                      icon: Icon(
+                        Icons.settings,
+                        color: kColorSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    TextButton.icon(
                       style: TextButton.styleFrom(
                         backgroundColor: kColorPrimary,
                       ),
                       onPressed: () {},
+                      label: Text(
+                        'Historial',
+                        style: TextStyle(color: kColorSecondary),
+                      ),
                       icon: Icon(
                         Icons.list,
                         color: kColorSecondary,

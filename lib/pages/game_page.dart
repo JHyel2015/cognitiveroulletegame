@@ -4,7 +4,9 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
@@ -17,11 +19,14 @@ import 'package:http/http.dart' as http;
 
 import 'package:image/image.dart' as img;
 import 'package:flutter_image_filters/flutter_image_filters.dart';
+import 'package:intl/intl.dart';
 
 class GamePage extends StatefulWidget {
+  int gameId;
   String title;
   String textToSpeak;
   GamePage({
+    required this.gameId,
     required this.title,
     required this.textToSpeak,
     super.key,
@@ -32,10 +37,12 @@ class GamePage extends StatefulWidget {
 }
 
 class _GamePageState extends State<GamePage> {
+  Stopwatch _stopwatch = Stopwatch();
   Color _currentColor = Colors.blue; // Color inicial
   Timer? _timer;
   String _connectionStatus = 'Unknown';
   int nElements = 3;
+  final commentController = TextEditingController();
   // PageController
   final _controller = PageController(viewportFraction: 0.8);
   // TextController
@@ -48,8 +55,19 @@ class _GamePageState extends State<GamePage> {
   int randomNum = 0;
   int scoreMax = 4;
   int currentScore = 0;
+  int selectedItem = -1;
+
+  int intentos = 0;
+  int aciertos = 0;
+  int fallos = 0;
 
   bool _btnActive = false;
+  bool _visible = false;
+  bool _firstTime = true;
+
+  late Duration elapsedTime;
+
+  int time = 0;
 
   List<String> fileURLs = [];
   List<String> randomFileURLs = [];
@@ -118,15 +136,18 @@ class _GamePageState extends State<GamePage> {
         );
 
     getRandomInt();
-
-    Future.delayed(Duration(seconds: 15), () {
+    _stopwatch.start();
+    time = userPreferences.time;
+    Future.delayed(Duration(seconds: time), () {
       print('Se cumplio el tiempo');
+      openBox();
     });
   }
 
   @override
   void dispose() {
     _timer?.cancel(); // Cancelar el temporizador al salir de la pantalla
+    _stopwatch.stop();
     super.dispose();
   }
 
@@ -179,6 +200,15 @@ class _GamePageState extends State<GamePage> {
     setState(() {
       randomNum = number;
     });
+  }
+
+  Future<Uint8List> _loadIamges(String path) async {
+    Uint8List result = await _getSilhouette(path);
+    if (_firstTime) {
+      await Future.delayed(Duration(seconds: 1));
+    }
+    _firstTime = false;
+    return result;
   }
 
   @override
@@ -255,7 +285,7 @@ class _GamePageState extends State<GamePage> {
                           crossAxisCount: 2,
                           children: [
                             FutureBuilder<Uint8List>(
-                              future: _getSilhouette(randomFileURLs[randomNum]),
+                              future: _loadIamges(randomFileURLs[randomNum]),
                               builder: (context, snapshot) {
                                 if (snapshot.hasData) {
                                   return Image.memory(
@@ -264,15 +294,58 @@ class _GamePageState extends State<GamePage> {
                                 } else if (snapshot.hasError) {
                                   return Text('Error: ${snapshot.error}');
                                 } else {
-                                  return CircularProgressIndicator();
+                                  return Center(
+                                    child: CircularProgressIndicator(),
+                                  );
                                 }
                               },
                             ),
-                            ...randomFileURLs.map(
-                              (e) {
-                                return Image.network(e);
+                            ...randomFileURLs.asMap().map(
+                              (i, e) {
+                                return MapEntry(
+                                  i,
+                                  Stack(
+                                    alignment: AlignmentDirectional.center,
+                                    children: [
+                                      InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _visible = true;
+                                            if (randomNum == i) {
+                                              aciertos++;
+                                            } else {
+                                              fallos++;
+                                            }
+                                            selectedItem = i;
+                                            intentos++;
+                                          });
+                                          Future.delayed(Duration(seconds: 1),
+                                              () {
+                                            print('siguiente imagen');
+                                            randomFileURLs = getRandomElements(
+                                                fileURLs, nElements);
+                                            getRandomInt();
+                                            _visible = false;
+                                            selectedItem = -1;
+                                            setState(() {});
+                                            // openBox();
+                                          });
+                                        },
+                                        child: CachedNetworkImage(
+                                          imageUrl: e,
+                                        ),
+                                      ),
+                                      Visibility(
+                                        visible: _visible && selectedItem == i,
+                                        child: Image.asset(i == randomNum
+                                            ? 'assets/check.png'
+                                            : 'assets/fail.webp'),
+                                      )
+                                    ],
+                                  ),
+                                );
                               },
-                            ),
+                            ).values,
                           ],
                         ),
                       ),
@@ -292,21 +365,23 @@ class _GamePageState extends State<GamePage> {
               ),
               Positioned(
                 bottom: 10,
-                child: IconButton(
+                child: TextButton.icon(
                   style: TextButton.styleFrom(
                     backgroundColor: kColorPrimary,
                   ),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HomePage(),
-                      ),
-                    );
+                    elapsedTime = _stopwatch.elapsed;
+                    time = elapsedTime.inSeconds;
+                    _stopwatch.stop();
+                    openBox();
                   },
                   icon: Icon(
-                    Icons.home_outlined,
+                    Icons.close,
                     color: kColorSecondary,
+                  ),
+                  label: Text(
+                    'Salir',
+                    style: TextStyle(color: kColorSecondary),
                   ),
                 ),
               ),
@@ -314,6 +389,128 @@ class _GamePageState extends State<GamePage> {
           ),
         ),
       ),
+    );
+  }
+
+  void openBox() {
+    BuildContext dialogContext;
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        dialogContext = context;
+        return SafeArea(
+          child: Container(
+            padding: EdgeInsets.all(8),
+            child: Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10))),
+              child: Container(
+                padding: EdgeInsets.all(15),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Fin del juego',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 15),
+                    Text(
+                      'Para enviar los resultados y regresar al menú principal, presiona el boton finalizar',
+                    ),
+                    SizedBox(height: 15),
+                    Text(
+                      'Resultados',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Chip(
+                              //avatar: Icon(Icons.schedule),
+                              label: Text(
+                                  'Tiempo ${Duration(seconds: time).toString().split('.')[0].substring(2)}'),
+                            ),
+                            Chip(
+                              //avatar: Icon(Icons.sunny),
+                              label: Text('Aciertos ${aciertos.toString()}'),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Chip(
+                              //avatar: Icon(Icons.sunny),
+                              label: Text('Intentos ${intentos.toString()}'),
+                            ),
+                            Chip(
+                              //avatar: Icon(Icons.sunny),
+                              label: Text('Fallos ${fallos.toString()}'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 15),
+                    Text(
+                      'Comentarios',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 15),
+                    TextFormField(
+                      controller: commentController,
+                      maxLines: 6,
+                      readOnly: userPreferences.isAnonymous,
+                      decoration: InputDecoration(
+                        hintText: userPreferences.isAnonymous
+                            ? 'Usuario invitado no puede ingresar comentarios ni guardar resultados'
+                            : '',
+                        enabledBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(width: 2, color: kColorPrimary),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(width: 2, color: kColorPrimary),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 15),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        backgroundColor: kColorPrimary,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/homepage', ModalRoute.withName('/'));
+                      },
+                      label: Text(
+                        'Finalizar',
+                        style: TextStyle(color: kColorSecondary),
+                      ),
+                      icon: Icon(
+                        Icons.undo,
+                        color: kColorSecondary,
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

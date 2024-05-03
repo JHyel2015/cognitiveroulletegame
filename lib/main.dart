@@ -4,6 +4,7 @@ import 'package:cognitiveroulletegame/data/level_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/data/user_notifier.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
+import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
 import 'package:cognitiveroulletegame/pages/on_boarding_page.dart';
 import 'package:flutter/material.dart';
@@ -76,6 +77,7 @@ class MainApp extends StatelessWidget {
         home: userPreferences.firstTime ? OnBoardingPage() : AuthPage(),
         routes: {
           '/homepage': (context) => const HomePage(),
+          '/divinerpage': (context) => DivinerPage(),
         },
       ),
     );

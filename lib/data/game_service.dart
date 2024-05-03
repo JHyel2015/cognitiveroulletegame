@@ -1,22 +1,39 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cognitiveroulletegame/models/game.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class GameService {
   static const _table = 'games';
   final CollectionReference _collectionReference =
       FirebaseFirestore.instance.collection(_table);
+  User? userAuth = FirebaseAuth.instance.currentUser;
 
   // FireStore
   Future<void> addData(Game game) async {
-    await _collectionReference.doc(game.id.toString()).set(game.toJson());
+    if (userAuth != null && !userAuth!.isAnonymous) {
+      await _collectionReference.doc(game.id.toString()).set(game.toJson());
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      print('Usuario invitado, no puede guardar datos');
+    }
   }
 
   Future<void> updateData(Game game) async {
-    await _collectionReference.doc(game.id.toString()).update(game.toJson());
+    if (userAuth != null && !userAuth!.isAnonymous) {
+      await _collectionReference.doc(game.id.toString()).update(game.toJson());
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      print('Usuario invitado, no puede guardar datos');
+    }
   }
 
   Future<void> deleteData(Game game) async {
-    await _collectionReference.doc(game.id.toString()).delete();
+    if (userAuth != null && !userAuth!.isAnonymous) {
+      await _collectionReference.doc(game.id.toString()).delete();
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      print('Usuario invitado, no puede guardar datos');
+    }
   }
 
   Stream<List<Game>> getFirestoreData() {

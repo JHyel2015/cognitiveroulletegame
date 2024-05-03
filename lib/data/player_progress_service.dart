@@ -1,26 +1,43 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cognitiveroulletegame/models/player_progress.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PlayerProgressService {
   static const _table = 'player_progress';
   final CollectionReference _collectionReference =
       FirebaseFirestore.instance.collection(_table);
+  User? userAuth = FirebaseAuth.instance.currentUser;
 
   // FireStore
   Future<void> addData(PlayerProgress playerProgress) async {
-    await _collectionReference
-        .doc(playerProgress.id.toString())
-        .set(playerProgress.toJson());
+    if (userAuth != null && !userAuth!.isAnonymous) {
+      await _collectionReference
+          .doc(playerProgress.id.toString())
+          .set(playerProgress.toJson());
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      print('Usuario invitado, no puede guardar datos');
+    }
   }
 
   Future<void> updateData(PlayerProgress playerProgress) async {
-    await _collectionReference
-        .doc(playerProgress.id.toString())
-        .update(playerProgress.toJson());
+    if (userAuth != null && !userAuth!.isAnonymous) {
+      await _collectionReference
+          .doc(playerProgress.id.toString())
+          .update(playerProgress.toJson());
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      print('Usuario invitado, no puede guardar datos');
+    }
   }
 
   Future<void> deleteData(PlayerProgress playerProgress) async {
-    await _collectionReference.doc(playerProgress.id.toString()).delete();
+    if (userAuth != null && !userAuth!.isAnonymous) {
+      await _collectionReference.doc(playerProgress.id.toString()).delete();
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      print('Usuario invitado, no puede guardar datos');
+    }
   }
 
   Stream<List<PlayerProgress>> getFirestoreData() {

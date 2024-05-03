@@ -10,9 +10,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 class IntroGamePage extends StatefulWidget {
+  int gameId;
   String title;
   String textToSpeak;
   IntroGamePage({
+    required this.gameId,
     required this.title,
     required this.textToSpeak,
     super.key,
@@ -62,6 +64,13 @@ class _IntroGamePageState extends State<IntroGamePage> {
   }
 
   @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    _stop();
+  }
+
+  @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
@@ -98,36 +107,49 @@ class _IntroGamePageState extends State<IntroGamePage> {
           floatingActionButton: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              FloatingActionButton(
-                child: userPreferences.isMute
-                    ? Icon(
-                        Icons.voice_over_off,
-                        color: kColorPrimary,
-                      )
-                    : Icon(
-                        Icons.record_voice_over,
-                        color: kColorPrimary,
-                      ),
-                shape: CircleBorder(),
-                onPressed: () {
-                  _stop();
-                  userPreferences.isMute = !userPreferences.isMute;
-                  if (!userPreferences.isMute) {
-                    _speak();
-                  }
-                  setState(() {});
-                },
-              ),
-              SizedBox(
-                width: 5,
-              ),
-              FloatingActionButton(
-                child: Icon(
-                  Icons.volume_up,
-                  color: kColorPrimary,
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.blueAccent),
+                  shape: BoxShape.circle,
                 ),
-                shape: CircleBorder(),
-                onPressed: _speak,
+                child: IconButton(
+                  onPressed: () {
+                    _stop();
+                    userPreferences.isMute = !userPreferences.isMute;
+                    if (!userPreferences.isMute) {
+                      _speak();
+                    }
+                    setState(() {});
+                  },
+                  icon: userPreferences.isMute
+                      ? Icon(
+                          Icons.voice_over_off,
+                          color: kColorPrimary,
+                        )
+                      : Icon(
+                          Icons.record_voice_over,
+                          color: kColorPrimary,
+                        ),
+                ),
+              ),
+              SizedBox(width: 5),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.blueAccent),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  style: ButtonStyle(
+                    side: MaterialStateProperty.all(
+                      BorderSide(width: 1, color: Colors.blueAccent),
+                    ),
+                  ),
+                  onPressed: _speak,
+                  icon: Icon(
+                    Icons.volume_up,
+                    color: kColorPrimary,
+                  ),
+                ),
               ),
             ],
           ),
@@ -152,26 +174,43 @@ class _IntroGamePageState extends State<IntroGamePage> {
                     ),
                   ),
                 ),
-                ElevatedButton(
+                TextButton.icon(
+                  style: TextButton.styleFrom(backgroundColor: kColorPrimary),
                   onPressed: () {
                     _stop();
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => GamePage(
+                          gameId: widget.gameId,
                           title: widget.title,
                           textToSpeak: widget.textToSpeak,
                         ),
                       ),
                     );
                   },
-                  child: Text('Continuar'),
+                  label: Text(
+                    'Continuar',
+                    style: TextStyle(color: kColorSecondary),
+                  ),
+                  icon: Icon(
+                    Icons.play_arrow,
+                    color: kColorSecondary,
+                  ),
                 ),
-                ElevatedButton(
+                TextButton.icon(
+                  style: TextButton.styleFrom(backgroundColor: kColorPrimary),
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: Text('Regresar'),
+                  label: Text(
+                    'Regresar',
+                    style: TextStyle(color: kColorSecondary),
+                  ),
+                  icon: Icon(
+                    Icons.undo,
+                    color: kColorSecondary,
+                  ),
                 ),
               ],
             ),

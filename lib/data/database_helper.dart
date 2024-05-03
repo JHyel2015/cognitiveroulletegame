@@ -56,8 +56,13 @@ class DatabaseHelper {
       CREATE TABLE IF NOT EXISTS player_progress (
         id INTEGER PRIMARY KEY,
         userId INTEGER,
+        gameId INTEGER,
         levelId INTEGER,
         score INTEGER,
+        successes INTEGER,
+        failures INTEGER,
+        attempts INTEGER,
+        playedTime TEXT,
         status TEXT,
         synced INTEGER DEFAULT 0,
         timestamp TEXT
@@ -71,6 +76,10 @@ class DatabaseHelper {
         score INTEGER,
         playedTime TEXT,
         playDate TEXT,
+        name TEXT,
+        description TEXT,
+        instructions TEXT,
+        imageUri TEXT,
         synced INTEGER DEFAULT 0,
         timestamp TEXT
       )

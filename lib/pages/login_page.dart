@@ -1,4 +1,5 @@
 import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/widgets/custom_text_form_field.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -142,18 +143,14 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 25),
-                  TextFormField(
+                  CustomTextFormField(
                     controller: emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Correo electrónico',
-                    ),
+                    labelText: 'Correo electrónico',
                   ),
                   const SizedBox(height: 20),
-                  TextFormField(
+                  CustomTextFormField(
                     controller: passwordController,
-                    decoration: InputDecoration(
-                      labelText: 'Contraseña',
-                    ),
+                    labelText: 'Contraseña',
                     obscureText: true,
                   ),
                   const SizedBox(height: 10),

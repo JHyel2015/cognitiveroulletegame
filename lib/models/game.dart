@@ -7,6 +7,10 @@ class Game {
   int score;
   DateTime playedTime;
   DateTime playDate;
+  String name;
+  String description;
+  String instructions;
+  String imageUri;
   int synced;
   DateTime timestamp;
 
@@ -17,6 +21,10 @@ class Game {
     required this.score,
     required this.playedTime,
     required this.playDate,
+    required this.name,
+    required this.description,
+    required this.instructions,
+    required this.imageUri,
     this.synced = 0,
     required this.timestamp,
   });
@@ -29,6 +37,10 @@ class Game {
       score: json['score'] as int,
       playedTime: DateTime.parse(json['playedTime']),
       playDate: DateTime.parse(json['playDate']),
+      name: json['name'],
+      description: json['description'],
+      instructions: json['instructions'],
+      imageUri: json['imageUri'],
       synced: json['synced'],
       timestamp: DateTime.parse(json['timestamp']),
     );
@@ -40,8 +52,12 @@ class Game {
       'userId': userId,
       'levelId': levelId,
       'score': score,
-      'playedTime': playedTime,
-      'playDate': playDate,
+      'playedTime': playedTime.toString(),
+      'playDate': playDate.toString(),
+      'name': name,
+      'description': description,
+      'instructions': instructions,
+      'imageUri': imageUri,
       'synced': synced,
       "timestamp": timestamp.toString(),
     };
@@ -55,6 +71,10 @@ class Game {
       score: doc['score'] as int,
       playedTime: DateTime.parse(doc['playedTime']),
       playDate: DateTime.parse(doc['playDate']),
+      name: doc['name'],
+      description: doc['description'],
+      instructions: doc['instructions'],
+      imageUri: doc['imageUri'],
       synced: doc['synced'],
       timestamp: DateTime.parse(doc['timestamp']),
     );

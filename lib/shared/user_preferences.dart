@@ -44,4 +44,10 @@ class UserPreferences {
   set isAnonymous(bool value) {
     _preferences.setBool('isAnonymous', value);
   }
+
+  int get time => _preferences.getInt('time') ?? 15;
+
+  set time(int value) {
+    _preferences.setInt('time', value);
+  }
 }

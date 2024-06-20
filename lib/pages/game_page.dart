@@ -4,12 +4,11 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cognitiveroulletegame/constans.dart';
-import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
+import 'package:cognitiveroulletegame/widgets/ruleta_painter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -36,12 +35,13 @@ class GamePage extends StatefulWidget {
   State<GamePage> createState() => _GamePageState();
 }
 
-class _GamePageState extends State<GamePage> {
+class _GamePageState extends State<GamePage>
+    with SingleTickerProviderStateMixin {
   Stopwatch _stopwatch = Stopwatch();
   Color _currentColor = Colors.blue; // Color inicial
   Timer? _timer;
   String _connectionStatus = 'Unknown';
-  int nElements = 3;
+  int nElements = 6;
   final commentController = TextEditingController();
   // PageController
   final _controller = PageController(viewportFraction: 0.8);
@@ -52,14 +52,15 @@ class _GamePageState extends State<GamePage> {
   final SpeakerService speakerService = SpeakerService();
   int isTappedOut = 0;
   int isCorrect = 0;
-  int randomNum = 0;
+  int _randomNum = 0;
   int scoreMax = 4;
   int currentScore = 0;
   int selectedItem = -1;
+  int _segmentIndex = 0;
 
-  int intentos = 0;
-  int aciertos = 0;
-  int fallos = 0;
+  int _intentos = 0;
+  int _aciertos = 0;
+  int _fallos = 0;
 
   bool _btnActive = false;
   bool _visible = false;
@@ -67,17 +68,41 @@ class _GamePageState extends State<GamePage> {
 
   late Duration elapsedTime;
 
-  int time = 0;
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+  double _currentAngle = 0.0;
+  int _segments = 6;
+
+  int _time = 0;
 
   List<String> fileURLs = [];
   List<String> randomFileURLs = [];
 
-  List<Color> colorList = [
+  final List<String> _colorList = [
+    'blue',
+    'purple',
+    'orange',
+    'green',
+    'red',
+    'yellow',
+  ];
+
+  final List<Color> _colors = [
     Colors.blue,
-    Colors.red,
+    Colors.purple,
+    Colors.orange,
     Colors.green,
+    Colors.red,
     Colors.yellow,
   ];
+
+  List<String> _imagePaths = [];
+
+  Map<String, String> _imageName = Map<String, String>();
+  Map<String, Image> _imagesMap = Map<String, Image>();
+
+  List<Image> _images = [];
+  late List<Image> _randomImages;
 
   late TextureSource texture;
   late BrightnessShaderConfiguration configuration;
@@ -98,10 +123,33 @@ class _GamePageState extends State<GamePage> {
       ListResult result = await FirebaseStorage.instance.ref().listAll();
       for (var ref in result.items) {
         String downloadURL = await ref.getDownloadURL();
-        fileURLs.add(downloadURL);
+        if (ref.name.startsWith('animal-')) {
+          fileURLs.add(downloadURL);
+          _imagePaths.add(downloadURL);
+          _imageName[ref.name] = downloadURL;
+        }
       }
+
+      _imageName.forEach((key, value) async {
+        _imagesMap[key] = Image.network(value);
+      });
+
+      // _images = _imagePaths.map((path) => Image.network(path)).toList();
+      _images = _imagesMap.values.toList();
+      await Future.wait(_images.map((image) => _loadImage(image)));
+
+      randomElements();
+
+      // _randomImages = getRandomElements(_images, nElements);
       randomFileURLs = getRandomElements(fileURLs, nElements);
       setState(() {});
+      _animationController.forward(from: 0);
+      _speak();
+      _stopwatch.start();
+      Future.delayed(Duration(seconds: _time), () {
+        print('Se cumplio el tiempo');
+        openBox();
+      });
     } catch (e) {
       print('Error al obtener los archivos del bucket de Firebase Storage: $e');
     }
@@ -112,18 +160,47 @@ class _GamePageState extends State<GamePage> {
     return list.take(n).toList();
   }
 
+  void randomElements() {
+    List<Image> randomImages = [];
+
+    for (var i = 0; i < _colorList.length; i++) {
+      var keyList = _imagesMap.keys
+          .toList()
+          .where((item) => item.contains('-${_colorList[i]}-'))
+          .toList();
+      keyList.shuffle();
+      keyList.first;
+      randomImages.add(_imagesMap[keyList.first]!);
+    }
+
+    _randomImages = randomImages;
+  }
+
   @override
   void initState() {
     super.initState();
 
-    _speak();
+    _time = userPreferences.time;
+    int time = _time >= 60 ? 15 : _time;
     _getFiles();
     _initConnectivity();
     _subscribeToConnectivityChanges();
-    // Iniciar el temporizador
-    // _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-    //   _changeColor(); // Cambiar el color cada n segundos
-    // });
+
+    _animationController = AnimationController(
+      duration: Duration(seconds: time),
+      vsync: this,
+    )..addListener(() {
+        setState(() {
+          _currentAngle = _animation.value;
+        });
+      });
+
+    final curvedAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.linear,
+    );
+    _animation =
+        Tween<double>(begin: 0, end: 2 * pi * 4).animate(curvedAnimation);
 
     configuration = BrightnessShaderConfiguration();
     configuration.brightness = 0.5;
@@ -136,32 +213,21 @@ class _GamePageState extends State<GamePage> {
         );
 
     getRandomInt();
-    _stopwatch.start();
-    time = userPreferences.time;
-    Future.delayed(Duration(seconds: time), () {
-      print('Se cumplio el tiempo');
-      openBox();
-    });
+    // _stopwatch.start();
+    // print(time);
+    // Future.delayed(Duration(seconds: time), () {
+    //   print('Se cumplio el tiempo');
+    //   // openBox();
+    // });
   }
 
   @override
   void dispose() {
     _timer?.cancel(); // Cancelar el temporizador al salir de la pantalla
     _stopwatch.stop();
+    _animationController.dispose();
+    _controller.dispose();
     super.dispose();
-  }
-
-  void _changeColor() {
-    setState(() {
-      // Cambiar el color a un color aleatorio
-      _currentColor = _getRandomColor();
-    });
-  }
-
-  Color _getRandomColor() {
-    // Generar un color aleatorio
-    final Random random = Random();
-    return colorList[random.nextInt(4)];
   }
 
   Future<void> _initConnectivity() async {
@@ -196,9 +262,9 @@ class _GamePageState extends State<GamePage> {
 
   void getRandomInt() {
     final random = Random();
-    int number = random.nextInt(3);
+    int number = random.nextInt(_segments);
     setState(() {
-      randomNum = number;
+      _randomNum = number;
     });
   }
 
@@ -211,10 +277,110 @@ class _GamePageState extends State<GamePage> {
     return result;
   }
 
+  Future<void> _loadImages() async {
+    _images = _imagePaths.map((path) => Image.network(path)).toList();
+    await Future.wait(_images.map((image) => _loadImage(image)));
+
+    _randomImages = getRandomElements(_images, nElements);
+    setState(() {});
+    _animationController.forward(from: 0);
+    _spinAnimation();
+  }
+
+  Future<void> _loadImage(Image image) {
+    final Completer<void> completer = Completer();
+    image.image.resolve(ImageConfiguration()).addListener(
+      ImageStreamListener((ImageInfo info, bool synchronousCall) {
+        completer.complete();
+      }),
+    );
+    return completer.future;
+  }
+
+  void _spinAnimation() {
+    if (_animationController.isAnimating) return;
+    _animationController.forward(from: 0);
+  }
+
+  void _stopAnimation() {
+    if (_animationController.isAnimating) {
+      _animationController.stop();
+      _showResult();
+    }
+  }
+
+  void _showResult() {
+    final double normalizedAngle = (_currentAngle % (2 * pi));
+    final double segmentAngle = (2 * pi / _segments);
+    _segmentIndex =
+        (_segments + (normalizedAngle / segmentAngle).floor()) % _segments;
+
+    _visible = true;
+    setState(() {});
+    _intentos++;
+    if (_randomNum == _segmentIndex) {
+      _aciertos++;
+    } else {
+      _fallos++;
+    }
+    Future.delayed(const Duration(seconds: 2), () {
+      _animationController.forward(from: 0);
+      getRandomInt();
+      randomElements();
+      _visible = false;
+    });
+  }
+
+  List<Widget> _buildPositionedImages() {
+    List<Widget> positionedImages = [];
+    final int imageCount = _randomImages.length;
+    final double centerX = 150; // half of the container width
+    final double centerY = 150; // half of the container height
+    final double radius = 100; // radius of the circle
+
+    for (int i = 0; i < imageCount; i++) {
+      final double angle = ((2 * pi * i) / imageCount) + (pi / 6);
+      final double x = centerX + radius * cos(angle);
+      final double y = centerY + radius * sin(angle);
+
+      positionedImages.add(
+        Positioned(
+          left: x - 40, // Adjust the offset to center the image
+          top: y - 40, // Adjust the offset to center the image
+          width: 80,
+          height: 80,
+          child: _randomImages[i],
+        ),
+      );
+    }
+
+    return positionedImages;
+  }
+
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
+
+    if (_images.isEmpty) {
+      return Container(
+        color: kColorSecondary,
+        child: SafeArea(
+          child: Scaffold(
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              centerTitle: true,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              title: Text(widget.title),
+            ),
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Container(
       color: kColorSecondary,
@@ -276,78 +442,150 @@ class _GamePageState extends State<GamePage> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 35),
+                    Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        color: Colors.grey,
+                        shape: BoxShape.circle,
+                      ),
+                      child: CircularProgressIndicator(
+                        backgroundColor: _colors[_randomNum],
+                        color: Colors.grey,
+                        value: _animationController.value,
+                        strokeWidth: 40.0,
+                      ),
+                    ),
+
+                    // if (randomFileURLs.isNotEmpty)
+                    //   SizedBox(
+                    //     height: 200,
+                    //     width: 200,
+                    //     child: FutureBuilder<Uint8List>(
+                    //       future: _loadIamges(randomFileURLs[randomNum]),
+                    //       builder: (context, snapshot) {
+                    //         if (snapshot.hasData) {
+                    //           return Image.memory(
+                    //             snapshot.data!,
+                    //           );
+                    //         } else if (snapshot.hasError) {
+                    //           return Text('Error: ${snapshot.error}');
+                    //         } else {
+                    //           return Center(
+                    //             child: CircularProgressIndicator(),
+                    //           );
+                    //         }
+                    //       },
+                    //     ),
+                    //   ),
                     if (randomFileURLs.isNotEmpty)
                       Expanded(
-                        child: GridView.count(
-                          physics: NeverScrollableScrollPhysics(),
-                          crossAxisSpacing: 5,
-                          crossAxisCount: 2,
-                          children: [
-                            FutureBuilder<Uint8List>(
-                              future: _loadIamges(randomFileURLs[randomNum]),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasData) {
-                                  return Image.memory(
-                                    snapshot.data!,
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return Text('Error: ${snapshot.error}');
-                                } else {
-                                  return Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-                              },
-                            ),
-                            ...randomFileURLs.asMap().map(
-                              (i, e) {
-                                return MapEntry(
-                                  i,
-                                  Stack(
-                                    alignment: AlignmentDirectional.center,
-                                    children: [
-                                      InkWell(
-                                        onTap: () {
-                                          setState(() {
-                                            _visible = true;
-                                            if (randomNum == i) {
-                                              aciertos++;
-                                            } else {
-                                              fallos++;
-                                            }
-                                            selectedItem = i;
-                                            intentos++;
-                                          });
-                                          Future.delayed(Duration(seconds: 1),
-                                              () {
-                                            print('siguiente imagen');
-                                            randomFileURLs = getRandomElements(
-                                                fileURLs, nElements);
-                                            getRandomInt();
-                                            _visible = false;
-                                            selectedItem = -1;
-                                            setState(() {});
-                                            // openBox();
-                                          });
-                                        },
-                                        child: CachedNetworkImage(
-                                          imageUrl: e,
-                                        ),
-                                      ),
-                                      Visibility(
-                                        visible: _visible && selectedItem == i,
-                                        child: Image.asset(i == randomNum
-                                            ? 'assets/check.png'
-                                            : 'assets/fail.webp'),
-                                      )
-                                    ],
+                        child: Center(
+                          child: GestureDetector(
+                            onTap: _animationController.isAnimating
+                                ? _stopAnimation
+                                : _spinAnimation,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                CustomPaint(
+                                  size: Size(300, 300),
+                                  painter: RuletaPainter(0.0, 6, _colors, []),
+                                ),
+                                ..._buildPositionedImages(),
+                                Transform.rotate(
+                                  angle: _currentAngle,
+                                  child: Image.asset(
+                                    'assets/flecha.png',
+                                    width: 70,
+                                    height: 70,
                                   ),
-                                );
-                              },
-                            ).values,
-                          ],
+                                ),
+                                Visibility(
+                                  visible: _visible,
+                                  child: Image.asset(
+                                    _segmentIndex == _randomNum
+                                        ? 'assets/check.png'
+                                        : 'assets/fail.webp',
+                                    width: 300,
+                                    height: 300,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
+                        // child: GridView.count(
+                        //   physics: NeverScrollableScrollPhysics(),
+                        //   childAspectRatio: 2.5,
+                        //   crossAxisSpacing: 5,
+                        //   crossAxisCount: 2,
+                        //   children: [
+                        //     // FutureBuilder<Uint8List>(
+                        //     //   future: _loadIamges(randomFileURLs[randomNum]),
+                        //     //   builder: (context, snapshot) {
+                        //     //     if (snapshot.hasData) {
+                        //     //       return Image.memory(
+                        //     //         snapshot.data!,
+                        //     //       );
+                        //     //     } else if (snapshot.hasError) {
+                        //     //       return Text('Error: ${snapshot.error}');
+                        //     //     } else {
+                        //     //       return Center(
+                        //     //         child: CircularProgressIndicator(),
+                        //     //       );
+                        //     //     }
+                        //     //   },
+                        //     // ),
+                        //     ...randomFileURLs.asMap().map(
+                        //       (i, e) {
+                        //         return MapEntry(
+                        //           i,
+                        //           Stack(
+                        //             alignment: AlignmentDirectional.center,
+                        //             children: [
+                        //               InkWell(
+                        //                 onTap: () {
+                        //                   setState(() {
+                        //                     _visible = true;
+                        //                     if (randomNum == i) {
+                        //                       aciertos++;
+                        //                     } else {
+                        //                       fallos++;
+                        //                     }
+                        //                     selectedItem = i;
+                        //                     intentos++;
+                        //                   });
+                        //                   Future.delayed(Duration(seconds: 1),
+                        //                       () {
+                        //                     print('siguiente imagen');
+                        //                     randomFileURLs = getRandomElements(
+                        //                         fileURLs, nElements);
+                        //                     getRandomInt();
+                        //                     _visible = false;
+                        //                     selectedItem = -1;
+                        //                     setState(() {});
+                        //                     // openBox();
+                        //                   });
+                        //                 },
+                        //                 child: CachedNetworkImage(
+                        //                   imageUrl: e,
+                        //                 ),
+                        //               ),
+                        //               Visibility(
+                        //                 visible: _visible && selectedItem == i,
+                        //                 child: Image.asset(i == randomNum
+                        //                     ? 'assets/check.png'
+                        //                     : 'assets/fail.webp'),
+                        //               )
+                        //             ],
+                        //           ),
+                        //         );
+                        //       },
+                        //     ).values,
+                        //   ],
+                        // ),
                       ),
                   ],
                 ),
@@ -371,7 +609,7 @@ class _GamePageState extends State<GamePage> {
                   ),
                   onPressed: () {
                     elapsedTime = _stopwatch.elapsed;
-                    time = elapsedTime.inSeconds;
+                    _time = elapsedTime.inSeconds;
                     _stopwatch.stop();
                     openBox();
                   },
@@ -435,11 +673,11 @@ class _GamePageState extends State<GamePage> {
                             Chip(
                               //avatar: Icon(Icons.schedule),
                               label: Text(
-                                  'Tiempo ${Duration(seconds: time).toString().split('.')[0].substring(2)}'),
+                                  'Tiempo ${Duration(seconds: _time).toString().split('.')[0].substring(2)}'),
                             ),
                             Chip(
                               //avatar: Icon(Icons.sunny),
-                              label: Text('Aciertos ${aciertos.toString()}'),
+                              label: Text('Aciertos ${_aciertos.toString()}'),
                             ),
                           ],
                         ),
@@ -449,11 +687,11 @@ class _GamePageState extends State<GamePage> {
                           children: [
                             Chip(
                               //avatar: Icon(Icons.sunny),
-                              label: Text('Intentos ${intentos.toString()}'),
+                              label: Text('Intentos ${_intentos.toString()}'),
                             ),
                             Chip(
                               //avatar: Icon(Icons.sunny),
-                              label: Text('Fallos ${fallos.toString()}'),
+                              label: Text('Fallos ${_fallos.toString()}'),
                             ),
                           ],
                         ),

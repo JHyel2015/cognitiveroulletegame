@@ -42,7 +42,8 @@ class SyncService {
 
         if (firestoreItem != null) {
           // Actualizar el elemento en Firestore si ya existe y el timestamp es mayor
-          if (level.timestamp.compareTo(firestoreItem.timestamp) == 1) {
+          if (level.timestamp.compareTo(firestoreItem.timestamp) == 1 &&
+              level.timestamp.isAfter(firestoreItem.timestamp)) {
             await levelService.updateData(level);
           }
         } else {
@@ -68,7 +69,8 @@ class SyncService {
 
         if (localLevel != null) {
           // Actualizar el elemento en SQLite si ya existe
-          if (firestoreLevel.timestamp.compareTo(localLevel.timestamp) == 1) {
+          if (firestoreLevel.timestamp.compareTo(localLevel.timestamp) == 1 &&
+              firestoreLevel.timestamp.isAfter(localLevel.timestamp)) {
             await levelDao.updateLevel(firestoreLevel);
           }
         } else {
@@ -79,7 +81,7 @@ class SyncService {
 
       // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
     } catch (e) {
-      print('Error en la sincronización: $e');
+      print('Level Error en la sincronización: $e');
     }
   }
 
@@ -101,7 +103,8 @@ class SyncService {
         if (firestoreItem != null) {
           // Actualizar el elemento en Firestore si ya existe
           if (trnPlayerProgress.timestamp.compareTo(firestoreItem.timestamp) ==
-              1) {
+                  1 &&
+              trnPlayerProgress.timestamp.isAfter(firestoreItem.timestamp)) {
             await playerProgressService.updateData(trnPlayerProgress);
           }
         } else {
@@ -130,8 +133,10 @@ class SyncService {
         if (localPlayerProgress != null) {
           // Actualizar el elemento en SQLite si ya existe
           if (firestorePlayerProgress.timestamp
-                  .compareTo(localPlayerProgress.timestamp) ==
-              1) {
+                      .compareTo(localPlayerProgress.timestamp) ==
+                  1 &&
+              firestorePlayerProgress.timestamp
+                  .isAfter(localPlayerProgress.timestamp)) {
             await playerProgressDao
                 .updatePlayerProgress(firestorePlayerProgress);
           }
@@ -143,7 +148,7 @@ class SyncService {
 
       // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
     } catch (e) {
-      print('Error en la sincronización: $e');
+      print('PlayerProgress Error en la sincronización: $e');
     }
   }
 
@@ -162,7 +167,8 @@ class SyncService {
 
         if (firestoreItem != null) {
           // Actualizar el elemento en Firestore si ya existe
-          if (game.timestamp.compareTo(firestoreItem.timestamp) == 1) {
+          if (game.timestamp.compareTo(firestoreItem.timestamp) == 1 &&
+              game.timestamp.isAfter(firestoreItem.timestamp)) {
             await gameService.updateData(game);
           }
         } else {
@@ -188,7 +194,8 @@ class SyncService {
 
         if (localGame != null) {
           // Actualizar el elemento en SQLite si ya existe
-          if (firestoreGame.timestamp.compareTo(localGame.timestamp) == 1) {
+          if (firestoreGame.timestamp.compareTo(localGame.timestamp) == 1 &&
+              firestoreGame.timestamp.isAfter(localGame.timestamp)) {
             await gameDao.updateGame(firestoreGame);
           }
         } else {
@@ -199,7 +206,7 @@ class SyncService {
 
       // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
     } catch (e) {
-      print('Error en la sincronización: $e');
+      print('Game Error en la sincronización: $e');
     }
   }
 
@@ -218,7 +225,8 @@ class SyncService {
 
         if (firestoreItem != null) {
           // Actualizar el elemento en Firestore si ya existe
-          if (colorsGame.timestamp.compareTo(firestoreItem.timestamp) == 1) {
+          if (colorsGame.timestamp.compareTo(firestoreItem.timestamp) == 1 &&
+              colorsGame.timestamp.isAfter(firestoreItem.timestamp)) {
             await colorsGameService.updateData(colorsGame);
           }
         } else {
@@ -246,8 +254,10 @@ class SyncService {
         if (localColorsGame != null) {
           // Actualizar el elemento en SQLite si ya existe
           if (firestoreColorsGame.timestamp
-                  .compareTo(localColorsGame.timestamp) ==
-              1) {
+                      .compareTo(localColorsGame.timestamp) ==
+                  1 &&
+              firestoreColorsGame.timestamp
+                  .isAfter(localColorsGame.timestamp)) {
             await colorsGameDao.updateColorsGame(firestoreColorsGame);
           }
         } else {
@@ -258,7 +268,7 @@ class SyncService {
 
       // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
     } catch (e) {
-      print('Error en la sincronización: $e');
+      print('ColorsGame Error en la sincronización: $e');
     }
   }
 

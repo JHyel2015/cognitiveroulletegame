@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/widgets/custom_text_form_field.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginPage extends StatefulWidget {
   void Function()? onPressed;
@@ -52,10 +55,28 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     try {
-      GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      await InternetAddress.lookup('google.com');
+
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      if (googleUser == null) {
+        return null;
+      }
+
+      final GoogleSignInAuthentication? googleAuth =
+          await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth?.accessToken,
+        idToken: googleAuth?.idToken,
+      );
+      // GoogleAuthProvider googlePxrovider = GoogleAuthProvider();
+
+      // UserCredential userCredential =
+      //     await FirebaseAuth.instance.signInWithProvider(googleProvider);
 
       UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithProvider(googleProvider);
+          await FirebaseAuth.instance.signInWithCredential(credential);
 
       User? user = userCredential.user;
       Navigator.pop(context);

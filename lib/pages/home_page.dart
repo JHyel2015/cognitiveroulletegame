@@ -2,6 +2,7 @@
 
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
+import 'package:cognitiveroulletegame/pages/discovery_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/settings_page.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
@@ -10,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -28,6 +30,10 @@ class _HomePageState extends State<HomePage> {
   User? _user;
 
   bool _btnActive = false;
+  BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
+
+  String _address = "...";
+  String _name = "...";
 
   @override
   void initState() {
@@ -36,7 +42,57 @@ class _HomePageState extends State<HomePage> {
     _getCurrentUser();
     _initConnectivity();
     _subscribeToConnectivityChanges();
+
+    // FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
+    // // Get current state
+    // FlutterBluetoothSerial.instance.state.then((state) {
+    //   setState(() {
+    //     _bluetoothState = state;
+    //   });
+    // });
+
+    // Future.doWhile(() async {
+    //   // Wait if adapter not enabled
+    //   var isOn = await FlutterBluetoothSerial.instance.isEnabled;
+    //   if (isOn != null && isOn) {
+    //     return false;
+    //   }
+    //   await Future.delayed(Duration(milliseconds: 0xDD));
+    //   return true;
+    // }).then((_) {
+    //   // Update the address field
+    //   FlutterBluetoothSerial.instance.address.then((address) {
+    //     setState(() {
+    //       if (address != null) {
+    //         _address = address;
+    //       }
+    //     });
+    //   });
+    // });
+
+    // FlutterBluetoothSerial.instance.name.then((name) {
+    //   setState(() {
+    //     if (name != null) {
+    //       _name = name;
+    //     }
+    //   });
+    // });
+
+    // // Listen for futher state changes
+    // FlutterBluetoothSerial.instance
+    //     .onStateChanged()
+    //     .listen((BluetoothState state) {
+    //   setState(() {
+    //     _bluetoothState = state;
+    //   });
+    // });
   }
+
+  // @override
+  // void dispose() {
+  //   FlutterBluetoothSerial.instance.setPairingRequestHandler(null);
+  //   super.dispose();
+  // }
 
   void _getCurrentUser() {
     User? user = _auth.currentUser;
@@ -174,6 +230,23 @@ class _HomePageState extends State<HomePage> {
                         backgroundColor: kColorPrimary,
                       ),
                       onPressed: () {},
+                      // () async {
+                      //   final BluetoothDevice selectedDevice =
+                      //       await Navigator.of(context).push(
+                      //     MaterialPageRoute(
+                      //       builder: (context) {
+                      //         return DiscoveryPage();
+                      //       },
+                      //     ),
+                      //   );
+
+                      //   if (selectedDevice != null) {
+                      //     print('Discovery -> selected ' +
+                      //         selectedDevice.address);
+                      //   } else {
+                      //     print('Discovery -> no device selected');
+                      //   }
+                      // },
                       label: Text(
                         'Historial',
                         style: TextStyle(color: kColorSecondary),
@@ -187,9 +260,31 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               Positioned(
+                left: (MediaQuery.of(context).size.width / 2) - 50,
+                top: 10,
+                child: Image.asset(
+                  'assets/EPN.png',
+                  height: 100,
+                  width: 100,
+                ),
+              ),
+              Positioned(
                 left: 10,
                 bottom: 10,
-                child: Image.asset('assets/EPN.png', height: 50, width: 50),
+                child: Image.asset(
+                  'assets/polhibou.png',
+                  height: 100,
+                  width: 100,
+                ),
+              ),
+              Positioned(
+                right: 10,
+                bottom: 10,
+                child: Image.asset(
+                  'assets/FIS.png',
+                  height: 100,
+                  width: 100,
+                ),
               ),
             ],
           ),

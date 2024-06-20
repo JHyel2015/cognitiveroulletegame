@@ -18,6 +18,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   final Map<String, int> _timeMap = {
     '15 seg': 15,
+    '1 min': 60,
     '5 min': 300,
     '10 min': 600,
     '15 min': 900,
@@ -35,6 +36,9 @@ class _SettingsPageState extends State<SettingsPage> {
   final List<Widget> _timeList = [
     Center(
       child: Text('15 seg'),
+    ),
+    Center(
+      child: Text('1 min'),
     ),
     Center(
       child: Text('5 min'),

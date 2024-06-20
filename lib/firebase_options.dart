@@ -63,6 +63,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '940308333057',
     projectId: 'cognitiveroulletegame',
     storageBucket: 'cognitiveroulletegame.appspot.com',
+    iosClientId: '940308333057-govp71spjfrcqap8e0gv6vnnun5qqlfv.apps.googleusercontent.com',
     iosBundleId: 'com.example.cognitiveroulletegame',
   );
+
 }

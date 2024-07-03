@@ -4,6 +4,7 @@ import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/discovery_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
+import 'package:cognitiveroulletegame/pages/find_devices_screen.dart';
 import 'package:cognitiveroulletegame/pages/settings_page.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -42,57 +43,7 @@ class _HomePageState extends State<HomePage> {
     _getCurrentUser();
     _initConnectivity();
     _subscribeToConnectivityChanges();
-
-    // FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
-    // // Get current state
-    // FlutterBluetoothSerial.instance.state.then((state) {
-    //   setState(() {
-    //     _bluetoothState = state;
-    //   });
-    // });
-
-    // Future.doWhile(() async {
-    //   // Wait if adapter not enabled
-    //   var isOn = await FlutterBluetoothSerial.instance.isEnabled;
-    //   if (isOn != null && isOn) {
-    //     return false;
-    //   }
-    //   await Future.delayed(Duration(milliseconds: 0xDD));
-    //   return true;
-    // }).then((_) {
-    //   // Update the address field
-    //   FlutterBluetoothSerial.instance.address.then((address) {
-    //     setState(() {
-    //       if (address != null) {
-    //         _address = address;
-    //       }
-    //     });
-    //   });
-    // });
-
-    // FlutterBluetoothSerial.instance.name.then((name) {
-    //   setState(() {
-    //     if (name != null) {
-    //       _name = name;
-    //     }
-    //   });
-    // });
-
-    // // Listen for futher state changes
-    // FlutterBluetoothSerial.instance
-    //     .onStateChanged()
-    //     .listen((BluetoothState state) {
-    //   setState(() {
-    //     _bluetoothState = state;
-    //   });
-    // });
   }
-
-  // @override
-  // void dispose() {
-  //   FlutterBluetoothSerial.instance.setPairingRequestHandler(null);
-  //   super.dispose();
-  // }
 
   void _getCurrentUser() {
     User? user = _auth.currentUser;
@@ -230,23 +181,6 @@ class _HomePageState extends State<HomePage> {
                         backgroundColor: kColorPrimary,
                       ),
                       onPressed: () {},
-                      // () async {
-                      //   final BluetoothDevice selectedDevice =
-                      //       await Navigator.of(context).push(
-                      //     MaterialPageRoute(
-                      //       builder: (context) {
-                      //         return DiscoveryPage();
-                      //       },
-                      //     ),
-                      //   );
-
-                      //   if (selectedDevice != null) {
-                      //     print('Discovery -> selected ' +
-                      //         selectedDevice.address);
-                      //   } else {
-                      //     print('Discovery -> no device selected');
-                      //   }
-                      // },
                       label: Text(
                         'Historial',
                         style: TextStyle(color: kColorSecondary),

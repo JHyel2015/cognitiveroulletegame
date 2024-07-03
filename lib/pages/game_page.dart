@@ -14,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:image/image.dart' as img;
@@ -78,6 +79,10 @@ class _GamePageState extends State<GamePage>
   List<String> fileURLs = [];
   List<String> randomFileURLs = [];
 
+  final List<double> _angleList = [
+    (2 * pi) - (pi / 6),
+  ];
+
   final List<String> _colorList = [
     'blue',
     'purple',
@@ -108,6 +113,10 @@ class _GamePageState extends State<GamePage>
   late BrightnessShaderConfiguration configuration;
   bool textureLoaded = false;
 
+  FlutterBlue bluetooth = FlutterBlue.instance;
+
+  double _downloadPercentage = 0;
+
   Future<void> _speak() async {
     await speakerService.stop();
     await speakerService.speak(widget.textToSpeak);
@@ -136,7 +145,9 @@ class _GamePageState extends State<GamePage>
 
       // _images = _imagePaths.map((path) => Image.network(path)).toList();
       _images = _imagesMap.values.toList();
-      await Future.wait(_images.map((image) => _loadImage(image)));
+      await Future.wait(_images.map((image) {
+        return _loadImage(image);
+      }));
 
       randomElements();
 
@@ -185,6 +196,8 @@ class _GamePageState extends State<GamePage>
     _getFiles();
     _initConnectivity();
     _subscribeToConnectivityChanges();
+
+    print(bluetooth.connectedDevices);
 
     _animationController = AnimationController(
       duration: Duration(seconds: time),
@@ -334,9 +347,9 @@ class _GamePageState extends State<GamePage>
   List<Widget> _buildPositionedImages() {
     List<Widget> positionedImages = [];
     final int imageCount = _randomImages.length;
-    final double centerX = 150; // half of the container width
-    final double centerY = 150; // half of the container height
-    final double radius = 100; // radius of the circle
+    final double centerX = 175; // half of the container width
+    final double centerY = 175; // half of the container height
+    final double radius = 120; // radius of the circle
 
     for (int i = 0; i < imageCount; i++) {
       final double angle = ((2 * pi * i) / imageCount) + (pi / 6);
@@ -345,10 +358,10 @@ class _GamePageState extends State<GamePage>
 
       positionedImages.add(
         Positioned(
-          left: x - 40, // Adjust the offset to center the image
-          top: y - 40, // Adjust the offset to center the image
-          width: 80,
-          height: 80,
+          left: x - 50, // Adjust the offset to center the image
+          top: y - 50, // Adjust the offset to center the image
+          width: 100,
+          height: 100,
           child: _randomImages[i],
         ),
       );
@@ -423,6 +436,17 @@ class _GamePageState extends State<GamePage>
           body: Stack(
             alignment: AlignmentDirectional.center,
             children: [
+              Positioned(
+                left: 10,
+                bottom: 10,
+                child: InkWell(
+                  onTap: _speak,
+                  child: Image.asset(
+                    'assets/robot.gif',
+                    width: width * .25,
+                  ),
+                ),
+              ),
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -457,29 +481,7 @@ class _GamePageState extends State<GamePage>
                         strokeWidth: 40.0,
                       ),
                     ),
-
-                    // if (randomFileURLs.isNotEmpty)
-                    //   SizedBox(
-                    //     height: 200,
-                    //     width: 200,
-                    //     child: FutureBuilder<Uint8List>(
-                    //       future: _loadIamges(randomFileURLs[randomNum]),
-                    //       builder: (context, snapshot) {
-                    //         if (snapshot.hasData) {
-                    //           return Image.memory(
-                    //             snapshot.data!,
-                    //           );
-                    //         } else if (snapshot.hasError) {
-                    //           return Text('Error: ${snapshot.error}');
-                    //         } else {
-                    //           return Center(
-                    //             child: CircularProgressIndicator(),
-                    //           );
-                    //         }
-                    //       },
-                    //     ),
-                    //   ),
-                    if (randomFileURLs.isNotEmpty)
+                    if (_randomImages.isNotEmpty)
                       Expanded(
                         child: Center(
                           child: GestureDetector(
@@ -490,7 +492,7 @@ class _GamePageState extends State<GamePage>
                               alignment: Alignment.center,
                               children: [
                                 CustomPaint(
-                                  size: Size(300, 300),
+                                  size: Size(350, 350),
                                   painter: RuletaPainter(0.0, 6, _colors, []),
                                 ),
                                 ..._buildPositionedImages(),
@@ -508,97 +510,16 @@ class _GamePageState extends State<GamePage>
                                     _segmentIndex == _randomNum
                                         ? 'assets/check.png'
                                         : 'assets/fail.webp',
-                                    width: 300,
-                                    height: 300,
+                                    width: 350,
+                                    height: 350,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        // child: GridView.count(
-                        //   physics: NeverScrollableScrollPhysics(),
-                        //   childAspectRatio: 2.5,
-                        //   crossAxisSpacing: 5,
-                        //   crossAxisCount: 2,
-                        //   children: [
-                        //     // FutureBuilder<Uint8List>(
-                        //     //   future: _loadIamges(randomFileURLs[randomNum]),
-                        //     //   builder: (context, snapshot) {
-                        //     //     if (snapshot.hasData) {
-                        //     //       return Image.memory(
-                        //     //         snapshot.data!,
-                        //     //       );
-                        //     //     } else if (snapshot.hasError) {
-                        //     //       return Text('Error: ${snapshot.error}');
-                        //     //     } else {
-                        //     //       return Center(
-                        //     //         child: CircularProgressIndicator(),
-                        //     //       );
-                        //     //     }
-                        //     //   },
-                        //     // ),
-                        //     ...randomFileURLs.asMap().map(
-                        //       (i, e) {
-                        //         return MapEntry(
-                        //           i,
-                        //           Stack(
-                        //             alignment: AlignmentDirectional.center,
-                        //             children: [
-                        //               InkWell(
-                        //                 onTap: () {
-                        //                   setState(() {
-                        //                     _visible = true;
-                        //                     if (randomNum == i) {
-                        //                       aciertos++;
-                        //                     } else {
-                        //                       fallos++;
-                        //                     }
-                        //                     selectedItem = i;
-                        //                     intentos++;
-                        //                   });
-                        //                   Future.delayed(Duration(seconds: 1),
-                        //                       () {
-                        //                     print('siguiente imagen');
-                        //                     randomFileURLs = getRandomElements(
-                        //                         fileURLs, nElements);
-                        //                     getRandomInt();
-                        //                     _visible = false;
-                        //                     selectedItem = -1;
-                        //                     setState(() {});
-                        //                     // openBox();
-                        //                   });
-                        //                 },
-                        //                 child: CachedNetworkImage(
-                        //                   imageUrl: e,
-                        //                 ),
-                        //               ),
-                        //               Visibility(
-                        //                 visible: _visible && selectedItem == i,
-                        //                 child: Image.asset(i == randomNum
-                        //                     ? 'assets/check.png'
-                        //                     : 'assets/fail.webp'),
-                        //               )
-                        //             ],
-                        //           ),
-                        //         );
-                        //       },
-                        //     ).values,
-                        //   ],
-                        // ),
                       ),
                   ],
-                ),
-              ),
-              Positioned(
-                left: 10,
-                bottom: 10,
-                child: InkWell(
-                  onTap: _speak,
-                  child: Image.asset(
-                    'assets/robot.gif',
-                    width: width * .25,
-                  ),
                 ),
               ),
               Positioned(

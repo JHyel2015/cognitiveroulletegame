@@ -1,4 +1,6 @@
 import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/pages/blue_app_two.dart';
+import 'package:cognitiveroulletegame/pages/blue_scan_page.dart';
 import 'package:cognitiveroulletegame/pages/bluetooth_app.dart';
 import 'package:cognitiveroulletegame/pages/find_devices_screen.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
@@ -122,7 +124,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) {
-                          return FindDevicesScreen();
+                          // return FindDevicesScreen();
+                          return BlueAppTwo();
+                          // return BlueScanPage();
                         },
                       ),
                     );

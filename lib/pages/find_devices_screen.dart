@@ -19,50 +19,57 @@ class FindDevicesScreen extends StatelessWidget {
                 stream: Stream.periodic(Duration(seconds: 2))
                     .asyncMap((_) => FlutterBlue.instance.connectedDevices),
                 initialData: [],
-                builder: (c, snapshot) => Column(
-                  children: snapshot.data!
-                      .map((d) => ListTile(
-                            title: Text(d.name),
-                            subtitle: Text(d.id.toString()),
-                            trailing: StreamBuilder<BluetoothDeviceState>(
-                              stream: d.state,
-                              initialData: BluetoothDeviceState.disconnected,
-                              builder: (c, snapshot) {
-                                if (snapshot.data ==
-                                    BluetoothDeviceState.connected) {
-                                  return ElevatedButton(
-                                    child: Text('OPEN'),
-                                    onPressed: () async {
-                                      // List<BluetoothService> deviceServices =
-                                      //     await d.discoverServices();
-                                      // for (BluetoothService service
-                                      //     in deviceServices) {
-                                      //   for (BluetoothCharacteristic characteristic
-                                      //       in service.characteristics) {
-                                      //     if (characteristic.properties.read) {
-                                      //       await characteristic
-                                      //           .setNotifyValue(true);
-                                      //       characteristic.value
-                                      //           .listen((value) {
-                                      //         print(value);
-                                      //       });
-                                      //     }
-                                      //   }
-                                      // }
-                                      print(d.name);
-                                      Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  DeviceScreen(device: d)));
-                                    },
-                                  );
-                                }
-                                return Text(snapshot.data.toString());
-                              },
-                            ),
-                          ))
-                      .toList(),
-                ),
+                builder: (c, snapshot) {
+                  if (snapshot.data == null) {
+                    return Center(child: CircularProgressIndicator());
+                  } else {
+                    return Column(
+                      children: snapshot.data!
+                          .map((d) => ListTile(
+                                title: Text(d.name),
+                                subtitle: Text(d.id.toString()),
+                                trailing: StreamBuilder<BluetoothDeviceState>(
+                                  stream: d.state,
+                                  initialData:
+                                      BluetoothDeviceState.disconnected,
+                                  builder: (c, snapshot) {
+                                    if (snapshot.data ==
+                                        BluetoothDeviceState.connected) {
+                                      return ElevatedButton(
+                                        child: Text('OPEN'),
+                                        onPressed: () async {
+                                          // List<BluetoothService> deviceServices =
+                                          //     await d.discoverServices();
+                                          // for (BluetoothService service
+                                          //     in deviceServices) {
+                                          //   for (BluetoothCharacteristic characteristic
+                                          //       in service.characteristics) {
+                                          //     if (characteristic.properties.read) {
+                                          //       await characteristic
+                                          //           .setNotifyValue(true);
+                                          //       characteristic.value
+                                          //           .listen((value) {
+                                          //         print(value);
+                                          //       });
+                                          //     }
+                                          //   }
+                                          // }
+                                          print(d.name);
+                                          Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      DeviceScreen(device: d)));
+                                        },
+                                      );
+                                    }
+                                    return Text(snapshot.data.toString());
+                                  },
+                                ),
+                              ))
+                          .toList(),
+                    );
+                  }
+                },
               ),
               StreamBuilder<List<ScanResult>>(
                 stream: FlutterBlue.instance.scanResults,

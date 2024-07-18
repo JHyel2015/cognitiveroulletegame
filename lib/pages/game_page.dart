@@ -5,16 +5,19 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/models/esp32.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:cognitiveroulletegame/widgets/ruleta_painter.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:flutter_blue/flutter_blue.dart';
+// import 'package:flutter_blue/flutter_blue.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:image/image.dart' as img;
@@ -51,6 +54,18 @@ class _GamePageState extends State<GamePage>
 
   final user = FirebaseAuth.instance.currentUser;
   final SpeakerService speakerService = SpeakerService();
+
+  bool _ledOn = false;
+  int _valorEnvio = 0;
+  Sensores _sensores = Sensores();
+  // final FirebaseDatabase _databaseReference = FirebaseDatabase.instance;
+  late FirebaseApp _secondaryApp;
+  late FirebaseDatabase _databaseReference;
+  late StreamSubscription<DatabaseEvent> _ledOnSubscription;
+  late StreamSubscription<DatabaseEvent> _sensoresSubscription;
+  late DatabaseReference _ledOnRef;
+  late DatabaseReference _sensoresRef;
+
   int isTappedOut = 0;
   int isCorrect = 0;
   int _randomNum = 0;
@@ -71,7 +86,8 @@ class _GamePageState extends State<GamePage>
 
   late AnimationController _animationController;
   late Animation<double> _animation;
-  double _currentAngle = 0.0;
+  double _currentAngle = pi / 6;
+  double _angle = pi / 2;
   int _segments = 6;
 
   int _time = 0;
@@ -107,15 +123,86 @@ class _GamePageState extends State<GamePage>
   Map<String, Image> _imagesMap = Map<String, Image>();
 
   List<Image> _images = [];
-  late List<Image> _randomImages;
+  late List<Image> _randomImages = [];
 
   late TextureSource texture;
   late BrightnessShaderConfiguration configuration;
   bool textureLoaded = false;
 
-  FlutterBlue bluetooth = FlutterBlue.instance;
+  // FlutterBlue bluetooth = FlutterBlue.instance;
 
   double _downloadPercentage = 0;
+
+  Future<void> init() async {
+    _secondaryApp = Firebase.app('esp32colores');
+    _databaseReference = FirebaseDatabase.instanceFor(
+      app: _secondaryApp,
+      databaseURL: 'https://esp32colores-default-rtdb.firebaseio.com',
+    );
+
+    _ledOnRef = _databaseReference.ref('EstadoLED');
+    _sensoresRef = _databaseReference.ref('esp32DataBase/Sensores');
+
+    _databaseReference.setPersistenceEnabled(true);
+    _databaseReference.setPersistenceCacheSizeBytes(10000000);
+
+    await _ledOnRef.keepSynced(true);
+    await _sensoresRef.keepSynced(true);
+
+    try {
+      final counterSnapshot = await _ledOnRef.get();
+
+      print(
+        'Connected to directly configured database and read'
+        '${counterSnapshot.value}',
+      );
+    } catch (err) {
+      print(err);
+    }
+
+    _ledOnSubscription = _ledOnRef.onValue.listen(
+      (DatabaseEvent event) {
+        setState(() {
+          _ledOn = (event.snapshot.value ?? false) as bool;
+          print(event.snapshot.value);
+        });
+      },
+    );
+
+    _sensoresSubscription = _sensoresRef.onValue.listen(
+      (DatabaseEvent event) async {
+        setState(() {
+          print('1 ${event.snapshot.value}');
+          final value = Map<String, dynamic>.from(
+              event.snapshot.value as Map<Object?, Object?>);
+          _sensores = (Sensores.fromJson(value));
+          _angle = 0;
+          if (_sensores.blue) {
+            _angle = pi / 6;
+          } else if (_sensores.purple) {
+            _angle = pi / 2;
+          } else if (_sensores.orange) {
+            _angle = pi - pi / 6;
+          } else if (_sensores.green) {
+            _angle = pi + pi / 6;
+          } else if (_sensores.red) {
+            _angle = 3 * pi / 2;
+          } else if (_sensores.yellow) {
+            _angle = 2 * pi - pi / 6;
+          } else {
+            _angle = 3 * pi / 2;
+          }
+          _currentAngle = _angle;
+          print('3 ${_sensores.toJson().toString()}');
+        });
+        if (_sensores.valorEnvio == 1) {
+          _valorEnvio = _sensores.valorEnvio;
+          _stopAnimation();
+          await _sensoresRef.update({"valorEnvio": 0});
+        }
+      },
+    );
+  }
 
   Future<void> _speak() async {
     await speakerService.stop();
@@ -190,6 +277,7 @@ class _GamePageState extends State<GamePage>
   @override
   void initState() {
     super.initState();
+    init();
 
     _time = userPreferences.time;
     int time = _time >= 60 ? 15 : _time;
@@ -197,23 +285,26 @@ class _GamePageState extends State<GamePage>
     _initConnectivity();
     _subscribeToConnectivityChanges();
 
-    print(bluetooth.connectedDevices);
+    // print(bluetooth.connectedDevices);
 
     _animationController = AnimationController(
       duration: Duration(seconds: time),
       vsync: this,
     )..addListener(() {
-        setState(() {
+        if (!_ledOn) {
           _currentAngle = _animation.value;
-        });
+        }
+        setState(() {});
       });
+
+    _animationController.repeat();
 
     final curvedAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.linear,
     );
-    _animation =
-        Tween<double>(begin: 0, end: 2 * pi * 4).animate(curvedAnimation);
+    _animation = Tween<double>(begin: -(pi / 2), end: (2 * pi * 4) - (pi / 2))
+        .animate(curvedAnimation);
 
     configuration = BrightnessShaderConfiguration();
     configuration.brightness = 0.5;
@@ -241,6 +332,8 @@ class _GamePageState extends State<GamePage>
     _animationController.dispose();
     _controller.dispose();
     super.dispose();
+    _ledOnSubscription.cancel();
+    _sensoresSubscription.cancel();
   }
 
   Future<void> _initConnectivity() async {
@@ -500,8 +593,8 @@ class _GamePageState extends State<GamePage>
                                   angle: _currentAngle,
                                   child: Image.asset(
                                     'assets/flecha.png',
-                                    width: 70,
-                                    height: 70,
+                                    width: 250,
+                                    height: 250,
                                   ),
                                 ),
                                 Visibility(

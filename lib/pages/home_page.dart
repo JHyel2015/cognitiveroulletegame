@@ -2,9 +2,7 @@
 
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
-import 'package:cognitiveroulletegame/pages/discovery_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
-import 'package:cognitiveroulletegame/pages/find_devices_screen.dart';
 import 'package:cognitiveroulletegame/pages/settings_page.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';

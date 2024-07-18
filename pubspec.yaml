@@ -36,9 +36,10 @@ dependencies:
   firebase_storage: ^11.7.4
   cached_network_image: ^3.1.0
   google_sign_in: ^6.2.1
-  flutter_blue: ^0.8.0
+  flutter_blue_plus: ^1.32.8
   flutter_bluetooth_serial: ^0.3.2
   scoped_model: ^2.0.0
+  firebase_database: ^10.5.7
 
 dev_dependencies:
   flutter_test:

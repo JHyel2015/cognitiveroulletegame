@@ -10,7 +10,10 @@
 		<string>Necesitamos acceso a la ubicación para escanear dispositivos Bluetooth cercanos</string>
 		<key>NSLocationAlwaysUsageDescription</key>
 		<string>Necesitamos acceso a la ubicación para escanear dispositivos Bluetooth cercanos</string>
-
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>bluetooth-central</string>
+		</array>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

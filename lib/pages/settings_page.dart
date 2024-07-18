@@ -1,8 +1,4 @@
 import 'package:cognitiveroulletegame/constans.dart';
-import 'package:cognitiveroulletegame/pages/blue_app_two.dart';
-import 'package:cognitiveroulletegame/pages/blue_scan_page.dart';
-import 'package:cognitiveroulletegame/pages/bluetooth_app.dart';
-import 'package:cognitiveroulletegame/pages/find_devices_screen.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:cognitiveroulletegame/utils/utils.dart';
 import 'package:flutter/cupertino.dart';
@@ -120,17 +116,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: ListTile(
                   title: Text('Bluetooth'),
                   trailing: Icon(Icons.arrow_forward_ios),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) {
-                          // return FindDevicesScreen();
-                          return BlueAppTwo();
-                          // return BlueScanPage();
-                        },
-                      ),
-                    );
-                  },
+                  onTap: () {},
                 ),
               )
             ],

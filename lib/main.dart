@@ -3,6 +3,7 @@ import 'package:cognitiveroulletegame/data/game_notifier.dart';
 import 'package:cognitiveroulletegame/data/level_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/data/user_notifier.dart';
+import 'package:cognitiveroulletegame/firebase_secondary_options.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
@@ -10,12 +11,13 @@ import 'package:cognitiveroulletegame/pages/on_boarding_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'package:cognitiveroulletegame/services/sync_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
-import 'firebase_options.dart';
+import 'firebase_primary_options.dart';
 
 import 'package:cognitiveroulletegame/data/database_helper.dart';
 
@@ -26,6 +28,10 @@ void main() async {
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await Firebase.initializeApp(
+    name: 'esp32colores',
+    options: FirebaseSecondaryOptions.currentPlatform,
   );
 
   SyncService syncService = SyncService();
@@ -45,6 +51,7 @@ void main() async {
   await Future.delayed(const Duration(seconds: 1));
   FlutterNativeSplash.remove();
 
+  FlutterBluePlus.setLogLevel(LogLevel.verbose, color: true);
   runApp(MainApp());
 }
 

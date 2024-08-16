@@ -1,3 +1,4 @@
+import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cognitiveroulletegame/data/user_dao.dart';
@@ -9,12 +10,15 @@ class UserNotifier extends ChangeNotifier {
   final UserDao _userDao = UserDao();
   final UserService _userService = UserService();
   final SyncService _syncService = SyncService();
+  final UserPreferences _userPreferences = UserPreferences();
   List<UserData> _users = [];
 
   UserData get user => _users.first;
 
   Future<void> init() async {
-    _users[0] = await _userDao.getUserByEmail(user.email);
+    if (_users.isNotEmpty) {
+      _users[0] = await _userDao.getUserByEmail(user.email);
+    }
     notifyListeners();
   }
 
@@ -23,12 +27,12 @@ class UserNotifier extends ChangeNotifier {
   }
 
   Future<void> addUser(UserData user) async {
-    int id = await _userDao.insert(user);
-    user.id = id;
+    await _userDao.insert(user);
+    user.uid = _userPreferences.storedUID;
     user.synced = 1;
     await _userService.addData(user);
     await _userDao.updateUser(user);
-    _users[0] = await _userDao.getUserByEmail(user.email);
+    _users.add(await _userDao.getUserByEmail(user.email));
     notifyListeners();
   }
 
@@ -51,4 +55,10 @@ class UserNotifier extends ChangeNotifier {
   //   await _syncService.syncUserData();
   //   notifyListeners();
   // }
+
+  void clearData() async {
+    await _userDao.clearData();
+
+    notifyListeners();
+  }
 }

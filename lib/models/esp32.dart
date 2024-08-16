@@ -42,49 +42,41 @@ class Esp32DataBase {
 }
 
 class Sensores {
-  bool yellow;
-  bool blue;
-  String colorquEjuega;
-  bool orange;
-  bool red;
-  bool green;
-  bool purple;
-  int colorJuega;
-  int valorEnvio;
+  int puntaje;
+  String colorSeleccionado;
+  String colorQueJuega;
+  int indiceColorEncendido;
+  int indiceColorSeleccionado;
+  int valorEnvioBoton;
 
   Sensores({
-    this.yellow = false,
-    this.blue = false,
-    this.colorquEjuega = 'Amarillo',
-    this.orange = false,
-    this.red = false,
-    this.green = false,
-    this.purple = false,
-    this.colorJuega = -1,
-    this.valorEnvio = 0,
+    this.puntaje = 1,
+    this.colorSeleccionado = 'Ninguno',
+    this.colorQueJuega = 'Violeta',
+    this.indiceColorEncendido = -1,
+    this.indiceColorSeleccionado = -1,
+    this.valorEnvioBoton = 0,
   });
 
   factory Sensores.fromJson(Map<String, dynamic> json) => Sensores(
-        yellow: json["Amarillo"],
-        blue: json["Azul"],
-        colorquEjuega: json["COLORQUEjuega"],
-        orange: json["Naranja"],
-        red: json["Rojo"],
-        green: json["Verde"],
-        purple: json["Violeta"],
-        colorJuega: json["colorJuega"],
-        valorEnvio: json["valorEnvio"],
+        colorSeleccionado: json["colorSeleccionado"],
+        colorQueJuega: json["color_que_juega"],
+        indiceColorEncendido:
+            (int.tryParse(json["indiceColorEncendido"].toString()) ?? 0) as int,
+        indiceColorSeleccionado:
+            (int.tryParse(json["indiceColorSeleccionado"].toString()) ?? 0)
+                as int,
+        puntaje: json["puntaje"],
+        valorEnvioBoton:
+            (int.tryParse(json["valorEnvioBoton"].toString()) ?? 0) as int,
       );
 
   Map<String, dynamic> toJson() => {
-        "Amarillo": yellow,
-        "Azul": blue,
-        "COLORQUEjuega": colorquEjuega,
-        "Naranja": orange,
-        "Rojo": red,
-        "Verde": green,
-        "Violeta": purple,
-        "colorJuega": colorJuega,
-        "valorEnvio": valorEnvio,
+        "puntaje": puntaje,
+        "colorSeleccionado": colorSeleccionado,
+        "color_que_juega": colorQueJuega,
+        "indiceColorEncendido": indiceColorEncendido,
+        "indiceColorSeleccionado": indiceColorSeleccionado,
+        "valorEnvioBoton": valorEnvioBoton,
       };
 }

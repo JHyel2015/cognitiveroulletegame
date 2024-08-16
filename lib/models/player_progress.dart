@@ -1,15 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PlayerProgress {
-  int? id;
-  int userId;
+  String? id;
+  String userId;
   int gameId;
   int levelId;
   int score;
   int successes;
   int failures;
   int attempts;
-  DateTime playedTime;
+  String playedTime;
+  String comment;
   String status;
   int synced;
   DateTime timestamp;
@@ -24,6 +25,7 @@ class PlayerProgress {
     required this.failures,
     required this.attempts,
     required this.playedTime,
+    required this.comment,
     required this.status,
     this.synced = 0,
     required this.timestamp,
@@ -31,15 +33,16 @@ class PlayerProgress {
 
   factory PlayerProgress.fromJson(Map<String, dynamic> json) {
     return PlayerProgress(
-      id: json['id'] as int,
-      userId: json['userId'] as int,
+      id: json['id'] as String,
+      userId: json['userId'] as String,
       gameId: json['gameId'] as int,
       levelId: json['levelId'] as int,
       score: json['score'] as int,
       successes: json['successes'] as int,
       failures: json['failures'] as int,
       attempts: json['attempts'] as int,
-      playedTime: DateTime.parse(json['playedTime']),
+      playedTime: json['playedTime'] as String,
+      comment: json['comment'] as String,
       status: json['status'] as String,
       synced: json['synced'],
       timestamp: DateTime.parse(json['timestamp']),
@@ -56,7 +59,8 @@ class PlayerProgress {
       'successes': successes,
       'failures': failures,
       'attempts': attempts,
-      'playedTime': playedTime.toString(),
+      'playedTime': playedTime,
+      'comment': comment,
       'status': status,
       'synced': synced,
       "timestamp": timestamp.toString(),
@@ -65,15 +69,16 @@ class PlayerProgress {
 
   factory PlayerProgress.fromQuery(QueryDocumentSnapshot<Object?> doc) {
     return PlayerProgress(
-      id: doc['id'] as int,
-      userId: doc['userId'] as int,
+      id: doc['id'] as String,
+      userId: doc['userId'] as String,
       gameId: doc['gameId'] as int,
       levelId: doc['levelId'] as int,
       score: doc['score'] as int,
       successes: doc['successes'] as int,
       failures: doc['failures'] as int,
       attempts: doc['attempts'] as int,
-      playedTime: DateTime.parse(doc['playedTime']),
+      playedTime: doc['playedTime'] as String,
+      comment: doc['comment'] as String,
       status: doc['status'] as String,
       synced: doc['synced'],
       timestamp: DateTime.parse(doc['timestamp']),

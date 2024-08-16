@@ -5,8 +5,11 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
+import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
+import 'package:cognitiveroulletegame/models/colors_game.dart';
 import 'package:cognitiveroulletegame/models/esp32.dart';
-import 'package:cognitiveroulletegame/pages/home_page.dart';
+import 'package:cognitiveroulletegame/models/player_progress.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:cognitiveroulletegame/widgets/ruleta_painter.dart';
@@ -22,7 +25,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:image/image.dart' as img;
 import 'package:flutter_image_filters/flutter_image_filters.dart';
-import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class GamePage extends StatefulWidget {
   int gameId;
@@ -42,9 +45,7 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage>
     with SingleTickerProviderStateMixin {
   Stopwatch _stopwatch = Stopwatch();
-  Color _currentColor = Colors.blue; // Color inicial
   Timer? _timer;
-  String _connectionStatus = 'Unknown';
   int nElements = 6;
   final commentController = TextEditingController();
   // PageController
@@ -52,7 +53,7 @@ class _GamePageState extends State<GamePage>
   // TextController
   final UserPreferences userPreferences = UserPreferences();
 
-  final user = FirebaseAuth.instance.currentUser;
+  final _user = FirebaseAuth.instance.currentUser;
   final SpeakerService speakerService = SpeakerService();
 
   bool _ledOn = false;
@@ -133,6 +134,8 @@ class _GamePageState extends State<GamePage>
 
   double _downloadPercentage = 0;
 
+  String? _playerProgressId;
+
   Future<void> init() async {
     _secondaryApp = Firebase.app('esp32colores');
     _databaseReference = FirebaseDatabase.instanceFor(
@@ -171,34 +174,45 @@ class _GamePageState extends State<GamePage>
 
     _sensoresSubscription = _sensoresRef.onValue.listen(
       (DatabaseEvent event) async {
-        setState(() {
-          print('1 ${event.snapshot.value}');
-          final value = Map<String, dynamic>.from(
-              event.snapshot.value as Map<Object?, Object?>);
-          _sensores = (Sensores.fromJson(value));
-          _angle = 0;
-          if (_sensores.blue) {
-            _angle = pi / 6;
-          } else if (_sensores.purple) {
-            _angle = pi / 2;
-          } else if (_sensores.orange) {
-            _angle = pi - pi / 6;
-          } else if (_sensores.green) {
-            _angle = pi + pi / 6;
-          } else if (_sensores.red) {
-            _angle = 3 * pi / 2;
-          } else if (_sensores.yellow) {
-            _angle = 2 * pi - pi / 6;
-          } else {
-            _angle = 3 * pi / 2;
+        if (_ledOn) {
+          setState(() {
+            print('1 ${event.snapshot.value}');
+            final value = Map<String, dynamic>.from(
+                event.snapshot.value as Map<Object?, Object?>);
+            _sensores = (Sensores.fromJson(value));
+            _angle = 0;
+            switch (_sensores.indiceColorEncendido) {
+              case 0:
+                _angle = pi / 6;
+              case 1:
+                _angle = pi / 2;
+              case 2:
+                _angle = pi - pi / 6;
+              case 3:
+                _angle = pi + pi / 6;
+              case 4:
+                _angle = 3 * pi / 2;
+              case 5:
+                _angle = 2 * pi - pi / 6;
+              default:
+                _angle = 3 * pi / 2;
+            }
+            _currentAngle = _angle;
+            print('3 ${_sensores.toJson().toString()}');
+          });
+          await _sensoresRef.update({"puntaje": 0});
+
+          if (_sensores.valorEnvioBoton == 1) {
+            _valorEnvio = _sensores.valorEnvioBoton;
+            if (_animationController.isAnimating) {
+              _stopAnimation();
+            } else {
+              _fallos++;
+              _intentos++;
+              _spinAnimation();
+            }
+            await _sensoresRef.update({"valorEnvioBoton": 0});
           }
-          _currentAngle = _angle;
-          print('3 ${_sensores.toJson().toString()}');
-        });
-        if (_sensores.valorEnvio == 1) {
-          _valorEnvio = _sensores.valorEnvio;
-          _stopAnimation();
-          await _sensoresRef.update({"valorEnvio": 0});
         }
       },
     );
@@ -245,6 +259,7 @@ class _GamePageState extends State<GamePage>
       _speak();
       _stopwatch.start();
       Future.delayed(Duration(seconds: _time), () {
+        _animationController.stop();
         print('Se cumplio el tiempo');
         openBox();
       });
@@ -277,27 +292,31 @@ class _GamePageState extends State<GamePage>
   @override
   void initState() {
     super.initState();
+    _ledOn = userPreferences.isLedOn;
     init();
 
     _time = userPreferences.time;
     int time = _time >= 60 ? 15 : _time;
     _getFiles();
-    _initConnectivity();
-    _subscribeToConnectivityChanges();
 
     // print(bluetooth.connectedDevices);
+    getRandomInt();
 
     _animationController = AnimationController(
       duration: Duration(seconds: time),
       vsync: this,
-    )..addListener(() {
+    )
+      ..addListener(() {
         if (!_ledOn) {
           _currentAngle = _animation.value;
         }
         setState(() {});
+      })
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _showResult();
+        }
       });
-
-    _animationController.repeat();
 
     final curvedAnimation = CurvedAnimation(
       parent: _animationController,
@@ -315,8 +334,7 @@ class _GamePageState extends State<GamePage>
             textureLoaded = true;
           }),
         );
-
-    getRandomInt();
+    addGameProgress();
     // _stopwatch.start();
     // print(time);
     // Future.delayed(Duration(seconds: time), () {
@@ -336,39 +354,19 @@ class _GamePageState extends State<GamePage>
     _sensoresSubscription.cancel();
   }
 
-  Future<void> _initConnectivity() async {
-    ConnectivityResult result = await Connectivity().checkConnectivity();
-    _updateConnectionStatus(result);
-  }
-
-  void _subscribeToConnectivityChanges() {
-    Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
-      _updateConnectionStatus(result);
-    });
-  }
-
-  void _updateConnectionStatus(ConnectivityResult result) {
-    setState(() {
-      switch (result) {
-        case ConnectivityResult.wifi:
-          _connectionStatus = 'Conectado a Wi-Fi';
-          break;
-        case ConnectivityResult.mobile:
-          _connectionStatus = 'Conectado a datos móviles';
-          break;
-        case ConnectivityResult.none:
-          _connectionStatus = 'Sin conexión a Internet';
-          break;
-        default:
-          _connectionStatus = 'Desconocido';
-          break;
-      }
-    });
-  }
-
-  void getRandomInt() {
+  void getRandomInt() async {
     final random = Random();
     int number = random.nextInt(_segments);
+    if (_ledOn) {
+      print(
+          'entra primera vez ${_colorList[number].substring(0, 1).toUpperCase()}${_colorList[number].substring(1).toLowerCase()}');
+      await _sensoresRef.update(
+        {
+          "color_que_juega":
+              '${_colorList[number].substring(0, 1).toUpperCase()}${_colorList[number].substring(1).toLowerCase()}'
+        },
+      );
+    }
     setState(() {
       _randomNum = number;
     });
@@ -415,7 +413,7 @@ class _GamePageState extends State<GamePage>
     }
   }
 
-  void _showResult() {
+  void _showResult() async {
     final double normalizedAngle = (_currentAngle % (2 * pi));
     final double segmentAngle = (2 * pi / _segments);
     _segmentIndex =
@@ -424,11 +422,21 @@ class _GamePageState extends State<GamePage>
     _visible = true;
     setState(() {});
     _intentos++;
+    // int colorSeleccionado = _colorList.indexWhere(
+    //     (color) => color.contains(_sensores.colorSeleccionado.toLowerCase()));
+
+    // if (_ledOn && colorSeleccionado != _segmentIndex) {
+    //   _segmentIndex = colorSeleccionado;
+    // }
+
     if (_randomNum == _segmentIndex) {
       _aciertos++;
+      await _sensoresRef.update({"puntaje": _aciertos});
     } else {
       _fallos++;
     }
+    addColorsGame(_colorList[_randomNum], _colorList[_segmentIndex],
+        _randomNum == _segmentIndex);
     Future.delayed(const Duration(seconds: 2), () {
       _animationController.forward(from: 0);
       getRandomInt();
@@ -593,8 +601,8 @@ class _GamePageState extends State<GamePage>
                                   angle: _currentAngle,
                                   child: Image.asset(
                                     'assets/flecha.png',
-                                    width: 250,
-                                    height: 250,
+                                    width: 225,
+                                    height: 225,
                                   ),
                                 ),
                                 Visibility(
@@ -743,6 +751,7 @@ class _GamePageState extends State<GamePage>
                         backgroundColor: kColorPrimary,
                       ),
                       onPressed: () {
+                        addGameProgress();
                         Navigator.pop(dialogContext);
                         Navigator.pushNamedAndRemoveUntil(
                             context, '/homepage', ModalRoute.withName('/'));
@@ -764,6 +773,50 @@ class _GamePageState extends State<GamePage>
         );
       },
     );
+  }
+
+  void addGameProgress() async {
+    final playerProgressNotifier = Provider.of<PlayerProgressNotifier>(
+      context,
+      listen: false,
+    );
+
+    PlayerProgress playerProgress = PlayerProgress(
+      userId: _user!.uid,
+      gameId: widget.gameId,
+      levelId: 0,
+      score: _aciertos > 0 ? (_intentos / _aciertos).floor() : 0,
+      successes: _aciertos,
+      failures: _fallos,
+      attempts: _intentos,
+      playedTime:
+          Duration(seconds: _time).toString().split('.')[0].substring(2),
+      comment: commentController.text,
+      status: 'DONE',
+      timestamp: DateTime.now(),
+    );
+
+    _playerProgressId = await playerProgressNotifier
+        .addPlayerProgress(playerProgress) as String?;
+  }
+
+  void addColorsGame(String selectedColor, String correctColor, bool success) {
+    final colorsGameNotifier = Provider.of<ColorsGameNotifier>(
+      context,
+      listen: false,
+    );
+
+    ColorsGame colorsGame = ColorsGame(
+      playerProgressId: _playerProgressId!,
+      gameId: widget.gameId,
+      userId: _user!.uid,
+      selectedColor: selectedColor,
+      correctColor: correctColor,
+      success: success,
+      timestamp: DateTime.now(),
+    );
+
+    colorsGameNotifier.addColorsGame(colorsGame);
   }
 }
 

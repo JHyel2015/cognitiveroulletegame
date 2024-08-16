@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserData {
-  int? id;
+  String? uid;
   String? name;
   String displayName;
   final String email;
@@ -11,7 +11,7 @@ class UserData {
   DateTime timestamp;
 
   UserData({
-    this.id,
+    this.uid,
     this.name,
     required this.displayName,
     required this.email,
@@ -23,7 +23,7 @@ class UserData {
 
   factory UserData.fromJson(Map<String, dynamic> json) {
     return UserData(
-      id: json['id'] as int,
+      uid: json['uid'] as String,
       name: json['name'] as String,
       displayName: json['displayName'] as String,
       email: json['email'] as String,
@@ -36,7 +36,7 @@ class UserData {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'id': id,
+      'uid': uid,
       'name': name,
       'displayName': displayName,
       'email': email,
@@ -49,7 +49,7 @@ class UserData {
 
   factory UserData.fromQuery(QueryDocumentSnapshot<Object?> doc) {
     return UserData(
-      id: doc['id'] as int,
+      uid: doc['uid'] as String,
       name: doc['name'] as String,
       displayName: doc['displayName'] as String,
       email: doc['email'] as String,

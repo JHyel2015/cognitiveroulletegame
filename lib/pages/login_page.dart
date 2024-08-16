@@ -1,11 +1,18 @@
 import 'dart:io';
 
 import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
+import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
+import 'package:cognitiveroulletegame/data/user_notifier.dart';
+import 'package:cognitiveroulletegame/models/player_progress.dart';
+import 'package:cognitiveroulletegame/models/user_data.dart';
+import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:cognitiveroulletegame/widgets/custom_text_form_field.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   void Function()? onPressed;
@@ -21,7 +28,23 @@ class _LoginPageState extends State<LoginPage> {
 
   final passwordController = TextEditingController();
 
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final userPreferences = UserPreferences();
+
+  User? _user;
+
   void signUserIn() async {
+    String? storedUID = userPreferences.storedUID;
+    final userNotifier = Provider.of<UserNotifier>(context, listen: false);
+    final colorsGameNotifier = Provider.of<ColorsGameNotifier>(
+      context,
+      listen: false,
+    );
+    final playerProgressNotifier = Provider.of<PlayerProgressNotifier>(
+      context,
+      listen: false,
+    );
+
     showDialog(
       context: context,
       builder: (context) {
@@ -32,11 +55,37 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
+      User? user = userCredential.user;
+
       Navigator.pop(context);
+
+      if (user != null) {
+        if (storedUID != user.uid && !userPreferences.isAnonymous) {
+          colorsGameNotifier.clearData();
+          playerProgressNotifier.clearData();
+        }
+        setState(() {
+          _user = _auth.currentUser;
+        });
+        userPreferences.storedUID = _user!.uid;
+        userPreferences.isAnonymous = _user!.isAnonymous;
+
+        UserData userData = UserData(
+          uid: _user!.uid,
+          name: _user!.displayName ?? '',
+          displayName: _user!.displayName ?? '',
+          email: _user!.email!,
+          phoneNumber: _user!.phoneNumber ?? '',
+          photoURL: _user!.photoURL ?? '',
+          timestamp: DateTime.now(),
+        );
+        userNotifier.addUser(userData);
+      }
+      print(_user!.isAnonymous);
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
 
@@ -45,6 +94,17 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void signUserWithGoogle() async {
+    String? storedUID = userPreferences.storedUID;
+    final userNotifier = Provider.of<UserNotifier>(context, listen: false);
+    final colorsGameNotifier = Provider.of<ColorsGameNotifier>(
+      context,
+      listen: false,
+    );
+    final playerProgressNotifier = Provider.of<PlayerProgressNotifier>(
+      context,
+      listen: false,
+    );
+
     showDialog(
       context: context,
       builder: (context) {
@@ -73,17 +133,38 @@ class _LoginPageState extends State<LoginPage> {
       // GoogleAuthProvider googlePxrovider = GoogleAuthProvider();
 
       // UserCredential userCredential =
-      //     await FirebaseAuth.instance.signInWithProvider(googleProvider);
+      //     await _auth.signInWithProvider(googleProvider);
 
       UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
+          await _auth.signInWithCredential(credential);
 
       User? user = userCredential.user;
+
       Navigator.pop(context);
 
       if (user != null) {
-        user = FirebaseAuth.instance.currentUser;
+        if (storedUID != user.uid && !userPreferences.isAnonymous) {
+          colorsGameNotifier.clearData();
+          playerProgressNotifier.clearData();
+        }
+        setState(() {
+          _user = _auth.currentUser;
+        });
+        userPreferences.storedUID = _user!.uid;
+        userPreferences.isAnonymous = _user!.isAnonymous;
+
+        UserData userData = UserData(
+          uid: _user!.uid,
+          name: _user!.displayName ?? '',
+          displayName: _user!.displayName ?? '',
+          email: _user!.email!,
+          phoneNumber: _user!.phoneNumber ?? '',
+          photoURL: _user!.photoURL ?? '',
+          timestamp: DateTime.now(),
+        );
+        userNotifier.addUser(userData);
       }
+      print(_user!.isAnonymous);
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
 
@@ -92,6 +173,18 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void signInAnonymously() async {
+    String? storedUID = userPreferences.storedUID;
+    final colorsGameNotifier = Provider.of<ColorsGameNotifier>(
+      context,
+      listen: false,
+    );
+    final playerProgressNotifier = Provider.of<PlayerProgressNotifier>(
+      context,
+      listen: false,
+    );
+
+    print(storedUID);
+
     showDialog(
       context: context,
       builder: (context) {
@@ -102,15 +195,22 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     try {
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInAnonymously();
+      UserCredential userCredential = await _auth.signInAnonymously();
       Navigator.pop(context);
 
       User? user = userCredential.user;
       print(user);
 
       if (user != null) {
-        user = FirebaseAuth.instance.currentUser;
+        if (storedUID != user.uid) {
+          colorsGameNotifier.clearData();
+          playerProgressNotifier.clearData();
+        }
+        setState(() {
+          _user = _auth.currentUser;
+        });
+        userPreferences.storedUID = _user!.uid;
+        userPreferences.isAnonymous = _user!.isAnonymous;
       }
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);

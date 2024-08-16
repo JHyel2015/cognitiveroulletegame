@@ -31,14 +31,15 @@ class DatabaseHelper {
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY,
+        uid TEXT,
         displayName TEXT,
         name TEXT,
         email TEXT,
         phoneNumber TEXT,
         photoURL TEXT,
         synced INTEGER DEFAULT 0,
-        timestamp TEXT
+        timestamp TEXT,
+        CONSTRAINT pk_users PRIMARY KEY (uid)
       )
     ''');
     await db.execute('''
@@ -54,8 +55,8 @@ class DatabaseHelper {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS player_progress (
-        id INTEGER PRIMARY KEY,
-        userId INTEGER,
+        id TEXT,
+        userId TEXT,
         gameId INTEGER,
         levelId INTEGER,
         score INTEGER,
@@ -63,15 +64,17 @@ class DatabaseHelper {
         failures INTEGER,
         attempts INTEGER,
         playedTime TEXT,
+        comment TEXT,
         status TEXT,
         synced INTEGER DEFAULT 0,
-        timestamp TEXT
+        timestamp TEXT,
+        CONSTRAINT pk_progress PRIMARY KEY (id)
       )
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS games (
         id INTEGER PRIMARY KEY,
-        userId INTEGER,
+        userId TEXT,
         levelId INTEGER,
         score INTEGER,
         playedTime TEXT,
@@ -86,12 +89,16 @@ class DatabaseHelper {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS colors_games (
+        id TEXT,
+        playerProgressId TEXT,
         gameId INTEGER,
+        userId TEXT,
         selectedColor TEXT,
         correctColor TEXT,
         success BLOB,
         synced INTEGER DEFAULT 0,
-        timestamp TEXT
+        timestamp TEXT,
+        CONSTRAINT pk_colors_game PRIMARY KEY (id)
       )
     ''');
   }
@@ -137,8 +144,8 @@ class DatabaseHelper {
   Future<void> clearData(String table) async {
     Database db = await database;
     await db.rawDelete('DELETE FROM ${table}');
-    await db.rawUpdate(
-        'UPDATE sqlite_sequence SET seq = 1 WHERE name = ?', [table]);
+    // await db.rawUpdate(
+    //     'UPDATE sqlite_sequence SET seq = 1 WHERE name = ? ', [table]);
   }
 
   Future<bool> isFieldExist(String tableName, String fieldName) async {

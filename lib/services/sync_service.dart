@@ -13,8 +13,11 @@ import 'package:cognitiveroulletegame/models/level.dart';
 import 'package:cognitiveroulletegame/models/player_progress.dart';
 import 'package:cognitiveroulletegame/models/game.dart';
 import 'package:cognitiveroulletegame/models/colors_game.dart';
+import 'package:cognitiveroulletegame/models/user_data.dart';
+import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 
 class SyncService {
+  final UserPreferences userPreferences = UserPreferences();
   final UserDao userDao = UserDao();
   final UserService userService = UserService();
   final LevelDao levelDao = LevelDao();
@@ -100,6 +103,7 @@ class SyncService {
         var firestoreItem = await playerProgressService
             .getItemFromFirestore(trnPlayerProgress.id.toString());
 
+        trnPlayerProgress.userId = userPreferences.storedUID;
         if (firestoreItem != null) {
           // Actualizar el elemento en Firestore si ya existe
           if (trnPlayerProgress.timestamp.compareTo(firestoreItem.timestamp) ==
@@ -122,13 +126,14 @@ class SyncService {
       // Sincronizar con SQLite
       for (QueryDocumentSnapshot firestoreDoc
           in firestorePlayerProgressSnapshot.docs) {
-        var itemId = int.tryParse(firestoreDoc.id);
+        var itemId = firestoreDoc.id;
         var firestorePlayerProgress = PlayerProgress.fromJson(
             firestoreDoc.data() as Map<String, dynamic>);
 
         // Verificar si el elemento ya existe en SQLite
         var localPlayerProgress =
-            await playerProgressDao.getPlayerProgressByID(itemId!);
+            await playerProgressDao.getPlayerProgressByID(itemId);
+        firestorePlayerProgress.userId = userPreferences.storedUID;
 
         if (localPlayerProgress != null) {
           // Actualizar el elemento en SQLite si ya existe
@@ -223,6 +228,8 @@ class SyncService {
         var firestoreItem = await colorsGameService
             .getItemFromFirestore(colorsGame.gameId.toString());
 
+        colorsGame.userId = userPreferences.storedUID;
+
         if (firestoreItem != null) {
           // Actualizar el elemento en Firestore si ya existe
           if (colorsGame.timestamp.compareTo(firestoreItem.timestamp) == 1 &&
@@ -244,12 +251,14 @@ class SyncService {
       // Sincronizar con SQLite
       for (QueryDocumentSnapshot firestoreDoc
           in firestoreColorsGamesSnapshot.docs) {
-        var itemId = int.tryParse(firestoreDoc.id);
+        var itemId = firestoreDoc.id;
         var firestoreColorsGame =
             ColorsGame.fromJson(firestoreDoc.data() as Map<String, dynamic>);
 
         // Verificar si el elemento ya existe en SQLite
-        var localColorsGame = await colorsGameDao.getColorsGameByID(itemId!);
+        var localColorsGame = await colorsGameDao.getColorsGameByID(itemId);
+
+        firestoreColorsGame.userId = userPreferences.storedUID;
 
         if (localColorsGame != null) {
           // Actualizar el elemento en SQLite si ya existe
@@ -272,50 +281,52 @@ class SyncService {
     }
   }
 
-  // Future<void> syncUserData() async {
-  //   try {
-  //     // Obtener datos de SQLite
-  //     User localUser = await userDao.getUserByID();
+  Future<void> syncUserData() async {
+    try {
+      // Obtener datos de SQLite
+      UserData localUser =
+          await userDao.getUserByUID(userPreferences.storedUID);
 
-  //     // Verificar si el elemento ya existe en Firestore
-  //     var firestoreItem =
-  //         await userService.getItemFromFirestore(localUser.id.toString());
+      // Verificar si el elemento ya existe en Firestore
+      var firestoreItem =
+          await userService.getItemFromFirestore(localUser.uid.toString());
 
-  //     if (firestoreItem != null) {
-  //       // Actualizar el elemento en Firestore si ya existe
-  //       if (localUser.timestamp.compareTo(firestoreItem.timestamp) == 1) {
-  //         await userService.updateData(localUser);
-  //       }
-  //     } else {
-  //       // Agregar el elemento a Firestore si no existe
-  //       await userService.addData(localUser);
-  //     }
+      if (firestoreItem != null) {
+        // Actualizar el elemento en Firestore si ya existe
+        if (localUser.timestamp.compareTo(firestoreItem.timestamp) == 1) {
+          await userService.updateData(localUser);
+        }
+      } else {
+        // Agregar el elemento a Firestore si no existe
+        await userService.addData(localUser);
+      }
 
-  //     // sync from firestore to sqlite
+      // sync from firestore to sqlite
 
-  //     // Obtener datos de Firestore
-  //     User firestoreUser = await userService.getItemFromFirestore();
+      // Obtener datos de Firestore
+      UserData? firestoreUser =
+          await userService.getItemFromFirestore(userPreferences.storedUID);
 
-  //     // Sincronizar con SQLite
-  //     var itemId = firestoreUser.id;
+      // Sincronizar con SQLite
+      var itemId = firestoreUser?.uid;
 
-  //     // Verificar si el elemento ya existe en SQLite
-  //     var localColorsGame = await userDao.getUserByID(itemId!);
+      // Verificar si el elemento ya existe en SQLite
+      var localColorsGame = await userDao.getUserByUID(itemId!);
 
-  //     if (localColorsGame != null) {
-  //       // Actualizar el elemento en SQLite si ya existe
-  //       if (firestoreUser.timestamp.compareTo(localColorsGame.timestamp) ==
-  //           1) {
-  //         await userDao.updateUser(firestoreUser);
-  //       }
-  //     } else {
-  //       // Agregar el elemento a SQLite si no existe
-  //       await userDao.insert(firestoreUser);
-  //     }
+      if (localColorsGame != null) {
+        // Actualizar el elemento en SQLite si ya existe
+        if (firestoreUser?.timestamp.compareTo(localColorsGame.timestamp) ==
+            1) {
+          await userDao.updateUser(firestoreUser!);
+        }
+      } else {
+        // Agregar el elemento a SQLite si no existe
+        await userDao.insert(firestoreUser!);
+      }
 
-  //     // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
-  //   } catch (e) {
-  //     print('Error en la sincronización: $e');
-  //   }
-  // }
+      // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
+    } catch (e) {
+      print('Error en la sincronización: $e');
+    }
+  }
 }

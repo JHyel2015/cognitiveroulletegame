@@ -8,7 +8,18 @@ class UserDao {
 
   Future<int> insert(UserData user) async {
     Database db = await dbHelper.database;
-    return await db.insert(_table, user.toJson());
+    return await db.insert(_table, user.toJson(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<UserData> getUserByUID(String uid) async {
+    Database db = await dbHelper.database;
+    List<Map<String, dynamic>> data = await db.query(
+      _table,
+      where: 'uid = ?',
+      whereArgs: [uid],
+    );
+    return UserData.fromJson(data.first);
   }
 
   Future<UserData> getUserByEmail(String email) async {
@@ -26,8 +37,12 @@ class UserDao {
     return await db.update(
       _table,
       user.toJson(),
-      where: 'id = ?',
-      whereArgs: [user.id],
+      where: 'uid = ?',
+      whereArgs: [user.uid],
     );
+  }
+
+  Future<void> clearData() async {
+    await dbHelper.clearData(_table);
   }
 }

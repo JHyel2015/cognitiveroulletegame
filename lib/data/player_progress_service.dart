@@ -6,22 +6,25 @@ class PlayerProgressService {
   static const _table = 'player_progress';
   final CollectionReference _collectionReference =
       FirebaseFirestore.instance.collection(_table);
-  User? userAuth = FirebaseAuth.instance.currentUser;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? _user;
 
   // FireStore
-  Future<void> addData(PlayerProgress playerProgress) async {
-    if (userAuth != null && !userAuth!.isAnonymous) {
-      await _collectionReference
-          .doc(playerProgress.id.toString())
-          .set(playerProgress.toJson());
+  Future<String> addData(PlayerProgress playerProgress) async {
+    _user = _auth.currentUser;
+    DocumentReference documentReference = _collectionReference.doc();
+    if (_user != null && !_user!.isAnonymous) {
+      await documentReference.set(playerProgress.toJson());
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
       print('Usuario invitado, no puede guardar datos');
     }
+    return documentReference.id;
   }
 
   Future<void> updateData(PlayerProgress playerProgress) async {
-    if (userAuth != null && !userAuth!.isAnonymous) {
+    _user = _auth.currentUser;
+    if (_user != null && !_user!.isAnonymous) {
       await _collectionReference
           .doc(playerProgress.id.toString())
           .update(playerProgress.toJson());
@@ -32,7 +35,8 @@ class PlayerProgressService {
   }
 
   Future<void> deleteData(PlayerProgress playerProgress) async {
-    if (userAuth != null && !userAuth!.isAnonymous) {
+    _user = _auth.currentUser;
+    if (_user != null && !_user!.isAnonymous) {
       await _collectionReference.doc(playerProgress.id.toString()).delete();
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
@@ -41,13 +45,20 @@ class PlayerProgressService {
   }
 
   Stream<List<PlayerProgress>> getFirestoreData() {
-    return _collectionReference.snapshots().map((snapshot) =>
-        snapshot.docs.map((docs) => PlayerProgress.fromQuery(docs)).toList());
+    return _collectionReference
+        .where("userId", isEqualTo: _user!.uid)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((docs) => PlayerProgress.fromQuery(docs))
+            .toList());
   }
 
   Future<QuerySnapshot> getAllItemsFromFirestore() async {
+    _user = _auth.currentUser;
     try {
-      return await _collectionReference.get();
+      return await _collectionReference
+          .where("userId", isEqualTo: _user!.uid)
+          .get();
     } catch (e) {
       rethrow;
     }

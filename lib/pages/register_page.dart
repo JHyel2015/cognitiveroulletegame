@@ -1,8 +1,17 @@
+import 'dart:io';
+
 import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
+import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
+import 'package:cognitiveroulletegame/data/user_notifier.dart';
+import 'package:cognitiveroulletegame/models/user_data.dart';
+import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:cognitiveroulletegame/widgets/custom_text_form_field.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
 
 class RegisterPage extends StatefulWidget {
   void Function()? onPressed;
@@ -14,12 +23,28 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<RegisterPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final userPreferences = UserPreferences();
+
   final emailController = TextEditingController();
   final displayNameController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
+  User? _user;
+
   void signUserUp() async {
+    String? storedUID = userPreferences.storedUID;
+    final userNotifier = Provider.of<UserNotifier>(context, listen: false);
+    final colorsGameNotifier = Provider.of<ColorsGameNotifier>(
+      context,
+      listen: false,
+    );
+    final playerProgressNotifier = Provider.of<PlayerProgressNotifier>(
+      context,
+      listen: false,
+    );
+
     showDialog(
       context: context,
       builder: (context) {
@@ -33,7 +58,7 @@ class _LoginPageState extends State<RegisterPage> {
     try {
       if (passwordController.text == confirmPasswordController.text) {
         UserCredential userCredential =
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            await _auth.createUserWithEmailAndPassword(
           email: emailController.text,
           password: passwordController.text,
         );
@@ -42,9 +67,31 @@ class _LoginPageState extends State<RegisterPage> {
         Navigator.pop(context);
 
         if (user != null) {
+          if (storedUID != user.uid && !userPreferences.isAnonymous) {
+            colorsGameNotifier.clearData();
+            playerProgressNotifier.clearData();
+          }
+
           await user.updateDisplayName(displayNameController.text);
           await user.reload();
-          user = FirebaseAuth.instance.currentUser;
+
+          setState(() {
+            _user = _auth.currentUser;
+          });
+
+          userPreferences.storedUID = _user!.uid;
+          userPreferences.isAnonymous = _user!.isAnonymous;
+
+          UserData userData = UserData(
+            uid: _user!.uid,
+            name: _user!.displayName ?? '',
+            displayName: _user!.displayName ?? '',
+            email: _user!.email!,
+            phoneNumber: _user!.phoneNumber ?? '',
+            photoURL: _user!.photoURL ?? '',
+            timestamp: DateTime.now(),
+          );
+          userNotifier.addUser(userData);
         }
       } else {
         Navigator.pop(context);
@@ -58,6 +105,17 @@ class _LoginPageState extends State<RegisterPage> {
   }
 
   void signUserWithGoogle() async {
+    String? storedUID = userPreferences.storedUID;
+    final userNotifier = Provider.of<UserNotifier>(context, listen: false);
+    final colorsGameNotifier = Provider.of<ColorsGameNotifier>(
+      context,
+      listen: false,
+    );
+    final playerProgressNotifier = Provider.of<PlayerProgressNotifier>(
+      context,
+      listen: false,
+    );
+
     showDialog(
       context: context,
       builder: (context) {
@@ -68,16 +126,49 @@ class _LoginPageState extends State<RegisterPage> {
     );
 
     try {
-      GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      await InternetAddress.lookup('google.com');
+
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      if (googleUser == null) {
+        return null;
+      }
+
+      final GoogleSignInAuthentication? googleAuth =
+          await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth?.accessToken,
+        idToken: googleAuth?.idToken,
+      );
 
       UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithProvider(googleProvider);
+          await _auth.signInWithCredential(credential);
 
       User? user = userCredential.user;
       Navigator.pop(context);
 
       if (user != null) {
-        user = FirebaseAuth.instance.currentUser;
+        if (storedUID != user.uid && !userPreferences.isAnonymous) {
+          colorsGameNotifier.clearData();
+          playerProgressNotifier.clearData();
+        }
+        setState(() {
+          _user = _auth.currentUser;
+        });
+        userPreferences.storedUID = _user!.uid;
+        userPreferences.isAnonymous = _user!.isAnonymous;
+
+        UserData userData = UserData(
+          uid: _user!.uid,
+          name: _user!.displayName ?? '',
+          displayName: _user!.displayName ?? '',
+          email: _user!.email!,
+          phoneNumber: _user!.phoneNumber ?? '',
+          photoURL: _user!.photoURL ?? '',
+          timestamp: DateTime.now(),
+        );
+        userNotifier.addUser(userData);
       }
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
@@ -87,6 +178,16 @@ class _LoginPageState extends State<RegisterPage> {
   }
 
   void signInAnonymously() async {
+    String? storedUID = userPreferences.storedUID;
+    final colorsGameNotifier = Provider.of<ColorsGameNotifier>(
+      context,
+      listen: false,
+    );
+    final playerProgressNotifier = Provider.of<PlayerProgressNotifier>(
+      context,
+      listen: false,
+    );
+
     showDialog(
       context: context,
       builder: (context) {
@@ -97,14 +198,21 @@ class _LoginPageState extends State<RegisterPage> {
     );
 
     try {
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInAnonymously();
+      UserCredential userCredential = await _auth.signInAnonymously();
       Navigator.pop(context);
 
       User? user = userCredential.user;
 
       if (user != null) {
-        user = FirebaseAuth.instance.currentUser;
+        if (storedUID != user.uid) {
+          colorsGameNotifier.clearData();
+          playerProgressNotifier.clearData();
+        }
+        setState(() {
+          _user = _auth.currentUser;
+        });
+        userPreferences.storedUID = _user!.uid;
+        userPreferences.isAnonymous = _user!.isAnonymous;
       }
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);

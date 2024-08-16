@@ -1,26 +1,49 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cognitiveroulletegame/models/colors_game.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ColorsGameService {
   static const _table = 'colors_games';
   final CollectionReference _collectionReference =
       FirebaseFirestore.instance.collection(_table);
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? _user;
 
   // FireStore
-  Future<void> addData(ColorsGame colorsGame) async {
-    await _collectionReference
-        .doc(colorsGame.gameId.toString())
-        .set(colorsGame.toJson());
+  Future<String> addData(ColorsGame colorsGame) async {
+    _user = _auth.currentUser;
+    DocumentReference documentReference = _collectionReference.doc();
+    print(
+        '${ColorsGameService._table} ${_user!.isAnonymous.toString()} ${documentReference.id}');
+    if (_user != null && !_user!.isAnonymous) {
+      await documentReference.set(colorsGame.toJson());
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      print('Usuario invitado, no puede guardar datos');
+    }
+    return documentReference.id;
   }
 
   Future<void> updateData(ColorsGame colorsGame) async {
-    await _collectionReference
-        .doc(colorsGame.gameId.toString())
-        .update(colorsGame.toJson());
+    _user = _auth.currentUser;
+    if (_user != null && !_user!.isAnonymous) {
+      await _collectionReference
+          .doc(colorsGame.id.toString())
+          .update(colorsGame.toJson());
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      print('Usuario invitado, no puede guardar datos');
+    }
   }
 
   Future<void> deleteData(ColorsGame colorsGame) async {
-    await _collectionReference.doc(colorsGame.gameId.toString()).delete();
+    _user = _auth.currentUser;
+    if (_user != null && !_user!.isAnonymous) {
+      await _collectionReference.doc(colorsGame.id.toString()).delete();
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      print('Usuario invitado, no puede borrar datos');
+    }
   }
 
   Stream<List<ColorsGame>> getFirestoreData() {

@@ -6,12 +6,14 @@ class UserService {
   static const _table = 'users';
   final CollectionReference _collectionReference =
       FirebaseFirestore.instance.collection(_table);
-  User? userAuth = FirebaseAuth.instance.currentUser;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? _user;
 
   // FireStore
   Future<void> addData(UserData user) async {
-    if (userAuth != null && !userAuth!.isAnonymous) {
-      await _collectionReference.doc(user.id.toString()).set(user.toJson());
+    _user = _auth.currentUser;
+    if (_user != null && !_user!.isAnonymous) {
+      await _collectionReference.doc(user.uid.toString()).set(user.toJson());
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
       print('Usuario invitado, no puede guardar datos');
@@ -19,8 +21,9 @@ class UserService {
   }
 
   Future<void> updateData(UserData user) async {
-    if (userAuth != null && !userAuth!.isAnonymous) {
-      await _collectionReference.doc(user.id.toString()).update(user.toJson());
+    _user = _auth.currentUser;
+    if (_user != null && !_user!.isAnonymous) {
+      await _collectionReference.doc(user.uid.toString()).update(user.toJson());
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
       print('Usuario invitado, no puede guardar datos');

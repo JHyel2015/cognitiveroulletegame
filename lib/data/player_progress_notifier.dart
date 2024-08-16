@@ -18,18 +18,19 @@ class PlayerProgressNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<PlayerProgress?> getPlayerProgressById(int id) async {
+  Future<PlayerProgress?> getPlayerProgressById(String id) async {
     return await _playerProgressDao.getPlayerProgressByID(id);
   }
 
-  Future<void> addPlayerProgress(PlayerProgress playerProgress) async {
-    int id = await _playerProgressDao.insert(playerProgress);
+  Future<String> addPlayerProgress(PlayerProgress playerProgress) async {
+    String id = await _playerProgressService.addData(playerProgress);
     playerProgress.id = id;
+    await _playerProgressDao.insert(playerProgress);
     playerProgress.synced = 1;
-    await _playerProgressService.addData(playerProgress);
     await _playerProgressDao.updatePlayerProgress(playerProgress);
     _playerProgresss = await _playerProgressDao.getAllPlayerProgresss();
     notifyListeners();
+    return playerProgress.id!;
   }
 
   Future<void> updatePlayerProgress(PlayerProgress playerProgress) async {
@@ -57,7 +58,6 @@ class PlayerProgressNotifier extends ChangeNotifier {
 
   void clearData() async {
     await _playerProgressDao.clearData();
-    await _playerProgressService.clearData();
 
     notifyListeners();
   }

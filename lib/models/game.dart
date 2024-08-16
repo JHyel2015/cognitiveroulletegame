@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Game {
   int? id;
-  int userId;
+  String userId;
   int levelId;
   int score;
   DateTime playedTime;
@@ -32,7 +32,7 @@ class Game {
   factory Game.fromJson(Map<String, dynamic> json) {
     return Game(
       id: json['id'] as int,
-      userId: json['userId'] as int,
+      userId: json['userId'] as String,
       levelId: json['levelId'] as int,
       score: json['score'] as int,
       playedTime: DateTime.parse(json['playedTime']),
@@ -66,7 +66,7 @@ class Game {
   factory Game.fromQuery(QueryDocumentSnapshot<Object?> doc) {
     return Game(
       id: doc['id'] as int,
-      userId: doc['userId'] as int,
+      userId: doc['userId'] as String,
       levelId: doc['levelId'] as int,
       score: doc['score'] as int,
       playedTime: DateTime.parse(doc['playedTime']),

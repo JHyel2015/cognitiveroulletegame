@@ -34,7 +34,7 @@ dependencies:
   flutter_native_splash: ^2.4.0
   introduction_screen: ^3.0.0
   firebase_storage: ^11.7.4
-  cached_network_image: ^3.1.0
+  cached_network_image: ^3.4.0
   google_sign_in: ^6.2.1
   flutter_blue_plus: ^1.32.8
   flutter_bluetooth_serial: ^0.3.2

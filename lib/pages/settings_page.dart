@@ -82,7 +82,8 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _timeController.text = _timeMap.keys.first;
+    _timeController.text = _timeMap.keys
+        .toList()[_timeMap.values.toList().indexOf(userPreferences.time)];
   }
 
   @override

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserPreferences {
@@ -45,9 +46,22 @@ class UserPreferences {
     _preferences.setBool('isAnonymous', value);
   }
 
+  bool get isLedOn => _preferences.getBool('isLedOn') ?? false;
+
+  set isLedOn(bool value) {
+    _preferences.setBool('isLedOn', value);
+  }
+
   int get time => _preferences.getInt('time') ?? 15;
 
   set time(int value) {
     _preferences.setInt('time', value);
+  }
+
+  String get storedUID =>
+      _preferences.getString('anonymousUID') ?? 'anonymousUID';
+
+  set storedUID(String value) {
+    _preferences.setString('anonymousUID', value);
   }
 }

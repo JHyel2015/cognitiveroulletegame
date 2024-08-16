@@ -36,9 +36,7 @@ void main() async {
 
   SyncService syncService = SyncService();
   await syncService.syncLevelData();
-  await syncService.syncPlayerProgressData();
   await syncService.syncGameData();
-  await syncService.syncColorsGameData();
 
   DatabaseHelper dbHelper = DatabaseHelper.instance;
 

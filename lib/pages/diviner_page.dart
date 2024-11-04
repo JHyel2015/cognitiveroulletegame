@@ -46,6 +46,8 @@ class _DivinerPageState extends State<DivinerPage> {
                   return GameCard(
                     color: Colors.amber,
                     name: gameNotifier.games[index].name,
+                    image:
+                        'assets/portada-${gameNotifier.games[index].name.toLowerCase()}.jpeg',
                     onPressed: () {
                       Navigator.push(
                         context,

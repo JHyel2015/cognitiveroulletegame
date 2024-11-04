@@ -40,22 +40,20 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   }
 
   void _updateConnectionStatus(ConnectivityResult result) {
-    setState(() {
-      switch (result) {
-        case ConnectivityResult.wifi:
-          _connectionStatus = 'Conectado a Wi-Fi';
-          break;
-        case ConnectivityResult.mobile:
-          _connectionStatus = 'Conectado a datos móviles';
-          break;
-        case ConnectivityResult.none:
-          _connectionStatus = 'Sin conexión a Internet';
-          break;
-        default:
-          _connectionStatus = 'Desconocido';
-          break;
-      }
-    });
+    switch (result) {
+      case ConnectivityResult.wifi:
+        _connectionStatus = 'Conectado a Wi-Fi';
+        break;
+      case ConnectivityResult.mobile:
+        _connectionStatus = 'Conectado a datos móviles';
+        break;
+      case ConnectivityResult.none:
+        _connectionStatus = 'Sin conexión a Internet';
+        break;
+      default:
+        _connectionStatus = 'Desconocido';
+        break;
+    }
   }
 
   @override

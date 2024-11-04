@@ -101,6 +101,13 @@ class DatabaseHelper {
         CONSTRAINT pk_colors_game PRIMARY KEY (id)
       )
     ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS images (
+        name TEXT,
+        imagePath TEXT,
+        CONSTRAINT pk_iamges PRIMARY KEY (name)
+      )
+    ''');
   }
 
   void _onUpgrade(Database db, int oldVersion, int newVersion) async {

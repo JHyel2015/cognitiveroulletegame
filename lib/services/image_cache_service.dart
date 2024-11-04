@@ -1,0 +1,114 @@
+import 'dart:io';
+import 'package:cognitiveroulletegame/data/image_dao.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+
+import 'package:cognitiveroulletegame/models/saved_image.dart';
+
+class ImageCacheService with ChangeNotifier {
+  ValueNotifier<double> progressNotifier = ValueNotifier<double>(0);
+  final ImageDao _imageDao = ImageDao();
+  List<SavedImage> _cachedImage = [];
+
+  List<SavedImage> get cachedImage => _cachedImage;
+  final Map<String, String> _cachedImages = {};
+  // Map para almacenar rutas locales
+
+  Future<void> init() async {
+    _cachedImage = await _imageDao.getAllImages();
+    notifyListeners();
+  }
+
+  Future<void> getFiles({bool sync = false}) async {
+    try {
+      ListResult result = await FirebaseStorage.instance.ref().listAll();
+      int totalFiles = result.items.length;
+      int downloadedFiles = 0;
+
+      for (var ref in result.items) {
+        String downloadURL = await ref.getDownloadURL();
+        await downloadAndCacheImage(downloadURL, ref.name, sync: sync);
+        // imageUrls.add(downloadURL);
+        // _imageName[ref.name] = downloadURL;
+
+        // Actualiza el progreso en el ValueNotifier
+        downloadedFiles++;
+        progressNotifier.value = downloadedFiles / totalFiles;
+      }
+    } catch (e) {
+      print('Error al obtener los archivos del bucket de Firebase Storage: $e');
+    }
+    print('Termino la descarga');
+  }
+
+  // Descargar y almacenar una imagen
+  Future<void> downloadAndCacheImage(String url, String imageName,
+      {bool sync = false}) async {
+    try {
+      // Obtener el directorio local
+      Directory appDocDir = await getApplicationDocumentsDirectory();
+      String savePath = '${appDocDir.path}/$imageName';
+      SavedImage savedImage = SavedImage(
+        name: imageName,
+        imagePath: savePath,
+      );
+
+      // Verificar si la imagen ya está almacenada localmente
+      if (_cachedImage.contains(savedImage)) {
+        if (sync) {
+          print('Descargando ${imageName} en ${savePath}');
+          Dio dio = Dio();
+          await dio.download(url, savePath);
+        }
+        return;
+      }
+
+      print('Descargando ${imageName} en ${savePath}');
+      // if (_cachedImages.containsKey(url)) return;
+
+      // Descargar el enlace de Firebase
+      // String url =
+      //     await FirebaseStorage.instance.ref(firebasePath).getDownloadURL();
+
+      // Descargar la imagen con Dio y almacenarla localmente
+      Dio dio = Dio();
+      await dio.download(url, savePath);
+
+      // Agregar la ruta local al Map
+      _cachedImages[imageName] = savePath;
+      await _imageDao.insert(savedImage);
+      _cachedImage = await _imageDao.getAllImages();
+      notifyListeners();
+    } catch (e) {
+      print('Error al descargar imagen: $e');
+    }
+  }
+
+  // Obtener la imagen en caché
+  String? getCachedImage(String imageName) {
+    return _cachedImage
+        .firstWhere((savedImage) => savedImage.name == imageName)
+        .imagePath;
+  }
+
+  SavedImage? getImage(String name) {
+    return _cachedImage.firstWhere((image) => image.name == name);
+  }
+
+  Future<SavedImage?> getImageByName(String name) async {
+    return await _imageDao.getImageByName(name);
+  }
+
+  List<SavedImage> getFilteredImages(String filter) {
+    List<SavedImage> filteredImages = [];
+
+    filteredImages = _cachedImage
+        .where(
+            (image) => image.name.toLowerCase().contains(filter.toLowerCase()))
+        .toList();
+
+    return filteredImages;
+  }
+}

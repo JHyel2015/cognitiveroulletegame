@@ -1,8 +1,10 @@
 import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/services/image_cache_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:cognitiveroulletegame/utils/utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -15,6 +17,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final UserPreferences userPreferences = UserPreferences();
   final _timeController = TextEditingController();
   final double _kItemExtent = 32.00;
+  bool _isDownloading = false;
 
   final Map<String, int> _timeMap = {
     '15 seg': 15,
@@ -88,6 +91,10 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final savedImageNotifier = Provider.of<ImageCacheService>(
+      context,
+    );
+
     return Container(
       color: kColorSecondary,
       child: SafeArea(
@@ -113,13 +120,48 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                 ),
               ),
+              if (_isDownloading)
+                SliverToBoxAdapter(
+                  child: ListTile(
+                    title: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Descargando archivos..."),
+                        SizedBox(height: 20),
+                        ValueListenableBuilder<double>(
+                          valueListenable: savedImageNotifier.progressNotifier,
+                          builder: (context, progress, child) {
+                            return LinearProgressIndicator(
+                              value: progress,
+                              minHeight: 8.0,
+                              backgroundColor: Colors.grey.shade300,
+                              color: Colors.blue,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               SliverToBoxAdapter(
                 child: ListTile(
-                  title: Text('Bluetooth'),
-                  trailing: Icon(Icons.arrow_forward_ios),
-                  onTap: () {},
+                  title: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _isDownloading = true;
+                          });
+                          // Puedes reiniciar la descarga
+                          savedImageNotifier.getFiles();
+                        },
+                        child: Text("Actualizar contenido"),
+                      ),
+                    ],
+                  ),
                 ),
-              )
+              ),
             ],
           ),
         ),

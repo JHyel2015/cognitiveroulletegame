@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -10,6 +11,7 @@ import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/models/colors_game.dart';
 import 'package:cognitiveroulletegame/models/esp32.dart';
 import 'package:cognitiveroulletegame/models/player_progress.dart';
+import 'package:cognitiveroulletegame/services/image_cache_service.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:cognitiveroulletegame/widgets/ruleta_painter.dart';
@@ -26,6 +28,7 @@ import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import 'package:flutter_image_filters/flutter_image_filters.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 class GamePage extends StatefulWidget {
   int gameId;
@@ -136,6 +139,8 @@ class _GamePageState extends State<GamePage>
 
   String? _playerProgressId;
 
+  bool _isWakelockEnabled = false;
+
   Future<void> init() async {
     _secondaryApp = Firebase.app('esp32colores');
     _databaseReference = FirebaseDatabase.instanceFor(
@@ -229,43 +234,36 @@ class _GamePageState extends State<GamePage>
   }
 
   Future<void> _getFiles() async {
-    try {
-      ListResult result = await FirebaseStorage.instance.ref().listAll();
-      for (var ref in result.items) {
-        String downloadURL = await ref.getDownloadURL();
-        if (ref.name.startsWith('animal-')) {
-          fileURLs.add(downloadURL);
-          _imagePaths.add(downloadURL);
-          _imageName[ref.name] = downloadURL;
-        }
+    final savedImageNotifier = Provider.of<ImageCacheService>(
+      context,
+      listen: false,
+    );
+
+    await savedImageNotifier.init();
+
+    final image = savedImageNotifier.getFilteredImages('animal-');
+
+    image.forEach((img) {
+      _imagesMap[img.name] = Image.file(File(img.imagePath));
+    });
+
+    _images = _imagesMap.values.toList();
+
+    randomElements();
+
+    setState(() {});
+    _animationController.forward(from: 0);
+    _speak();
+    _stopwatch.start();
+    Future.delayed(Duration(seconds: _time), () {
+      _animationController.stop();
+      print('Se cumplio el tiempo');
+      if (_isWakelockEnabled) {
+        WakelockPlus.disable();
       }
-
-      _imageName.forEach((key, value) async {
-        _imagesMap[key] = Image.network(value);
-      });
-
-      // _images = _imagePaths.map((path) => Image.network(path)).toList();
-      _images = _imagesMap.values.toList();
-      await Future.wait(_images.map((image) {
-        return _loadImage(image);
-      }));
-
-      randomElements();
-
-      // _randomImages = getRandomElements(_images, nElements);
-      randomFileURLs = getRandomElements(fileURLs, nElements);
-      setState(() {});
-      _animationController.forward(from: 0);
-      _speak();
-      _stopwatch.start();
-      Future.delayed(Duration(seconds: _time), () {
-        _animationController.stop();
-        print('Se cumplio el tiempo');
-        openBox();
-      });
-    } catch (e) {
-      print('Error al obtener los archivos del bucket de Firebase Storage: $e');
-    }
+      _isWakelockEnabled = false;
+      openBox();
+    });
   }
 
   List<T> getRandomElements<T>(List<T> list, int n) {
@@ -295,12 +293,11 @@ class _GamePageState extends State<GamePage>
     _ledOn = userPreferences.isLedOn;
     init();
 
+    WakelockPlus.enable();
+    _isWakelockEnabled = true;
+
     _time = userPreferences.time;
     int time = _time >= 60 ? 15 : _time;
-    _getFiles();
-
-    // print(bluetooth.connectedDevices);
-    getRandomInt();
 
     _animationController = AnimationController(
       duration: Duration(seconds: time),
@@ -317,6 +314,10 @@ class _GamePageState extends State<GamePage>
           _showResult();
         }
       });
+
+    _getFiles();
+
+    getRandomInt();
 
     final curvedAnimation = CurvedAnimation(
       parent: _animationController,
@@ -335,12 +336,6 @@ class _GamePageState extends State<GamePage>
           }),
         );
     addGameProgress();
-    // _stopwatch.start();
-    // print(time);
-    // Future.delayed(Duration(seconds: time), () {
-    //   print('Se cumplio el tiempo');
-    //   // openBox();
-    // });
   }
 
   @override
@@ -352,6 +347,8 @@ class _GamePageState extends State<GamePage>
     super.dispose();
     _ledOnSubscription.cancel();
     _sensoresSubscription.cancel();
+    WakelockPlus.disable();
+    _isWakelockEnabled = false;
   }
 
   void getRandomInt() async {
@@ -633,6 +630,10 @@ class _GamePageState extends State<GamePage>
                     elapsedTime = _stopwatch.elapsed;
                     _time = elapsedTime.inSeconds;
                     _stopwatch.stop();
+                    if (_isWakelockEnabled) {
+                      WakelockPlus.disable();
+                    }
+                    _isWakelockEnabled = false;
                     openBox();
                   },
                   icon: Icon(

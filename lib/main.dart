@@ -7,7 +7,9 @@ import 'package:cognitiveroulletegame/firebase_secondary_options.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
+import 'package:cognitiveroulletegame/pages/initial_loading_screen.dart';
 import 'package:cognitiveroulletegame/pages/on_boarding_page.dart';
+import 'package:cognitiveroulletegame/services/image_cache_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
@@ -68,18 +70,22 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider(
             create: (context) => ColorsGameNotifier()..init()),
         // ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(
+            create: (context) => ImageCacheService()..init()),
       ],
       child: MaterialApp(
         // theme: ThemeData().copyWith(useMaterial3: true),
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: Color(0xff2C60FF),
-            background: Color(0xffE4F3FA),
+            surface: Color(0xffE4F3FA),
           ),
         ),
         // themeMode: theme.isLightTheme ? ThemeMode.light : ThemeMode.dark,
         debugShowCheckedModeBanner: false,
-        home: userPreferences.firstTime ? OnBoardingPage() : AuthPage(),
+        home: !userPreferences.areImagesDownloaded
+            ? InitialLoadingScreen()
+            : OnBoardingPage(),
         routes: {
           '/homepage': (context) => const HomePage(),
           '/divinerpage': (context) => DivinerPage(),

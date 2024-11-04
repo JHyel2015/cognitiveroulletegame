@@ -5,11 +5,13 @@ import 'package:cognitiveroulletegame/constans.dart';
 class GameCard extends StatelessWidget {
   final Color color;
   final String name;
+  final String image;
   final Function() onPressed;
 
   const GameCard({
     required this.color,
     required this.name,
+    required this.image,
     required this.onPressed,
   });
 
@@ -33,11 +35,19 @@ class GameCard extends StatelessWidget {
               width: double.infinity,
               height: 200,
               decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(this.image),
+                  fit: BoxFit.fitWidth,
+                ),
                 color: this.color,
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Center(
-                child: Text(this.name),
+                child: Stack(
+                  children: [
+                    Text(this.name),
+                  ],
+                ),
               ),
             ),
           ),

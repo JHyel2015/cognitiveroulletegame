@@ -52,6 +52,13 @@ class UserPreferences {
     _preferences.setBool('isLedOn', value);
   }
 
+  bool get areImagesDownloaded =>
+      _preferences.getBool('areImagesDownloaded') ?? false;
+
+  set areImagesDownloaded(bool value) {
+    _preferences.setBool('areImagesDownloaded', value);
+  }
+
   int get time => _preferences.getInt('time') ?? 15;
 
   set time(int value) {

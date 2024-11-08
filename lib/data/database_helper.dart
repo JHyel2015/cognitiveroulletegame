@@ -43,6 +43,16 @@ class DatabaseHelper {
       )
     ''');
     await db.execute('''
+      CREATE TABLE IF NOT EXISTS players (
+        uid TEXT,
+        userId TEXT,
+        name TEXT,
+        synced INTEGER DEFAULT 0,
+        timestamp TEXT,
+        CONSTRAINT pk_users PRIMARY KEY (uid)
+      )
+    ''');
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS levels (
         id INTEGER PRIMARY KEY,
         name TEXT,
@@ -150,7 +160,7 @@ class DatabaseHelper {
 
   Future<void> clearData(String table) async {
     Database db = await database;
-    await db.rawDelete('DELETE FROM ${table}');
+    await db.rawDelete('DELETE FROM $table');
     // await db.rawUpdate(
     //     'UPDATE sqlite_sequence SET seq = 1 WHERE name = ? ', [table]);
   }

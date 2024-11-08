@@ -24,19 +24,8 @@ class ImageCacheService with ChangeNotifier {
   Future<void> getFiles({bool sync = false}) async {
     try {
       ListResult result = await FirebaseStorage.instance.ref().listAll();
-      int totalFiles = result.items.length;
-      int downloadedFiles = 0;
 
-      for (var ref in result.items) {
-        String downloadURL = await ref.getDownloadURL();
-        await downloadAndCacheImage(downloadURL, ref.name, sync: sync);
-        // imageUrls.add(downloadURL);
-        // _imageName[ref.name] = downloadURL;
-
-        // Actualiza el progreso en el ValueNotifier
-        downloadedFiles++;
-        progressNotifier.value = downloadedFiles / totalFiles;
-      }
+      await downloadAndCacheImagesInParallel(result.items, sync: sync);
     } catch (e) {
       print('Error al obtener los archivos del bucket de Firebase Storage: $e');
     }
@@ -84,6 +73,25 @@ class ImageCacheService with ChangeNotifier {
     } catch (e) {
       print('Error al descargar imagen: $e');
     }
+  }
+
+  // Descargar y almacenar imágenes en paralelo con progreso
+  Future<void> downloadAndCacheImagesInParallel(List<Reference> firebasePaths,
+      {bool sync = false}) async {
+    int totalImages = firebasePaths.length;
+    int downloadedImages = 0;
+
+    await Future.wait(firebasePaths.map((entry) async {
+      String downloadURL = await entry.getDownloadURL();
+      await downloadAndCacheImage(downloadURL, entry.name, sync: sync);
+
+      // Actualizar el progreso después de descargar cada imagen
+      downloadedImages++;
+      progressNotifier.value = downloadedImages / totalImages;
+    }));
+
+    // Restablecer el progreso al completar todas las descargas
+    progressNotifier.value = 1.0;
   }
 
   // Obtener la imagen en caché

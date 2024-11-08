@@ -62,13 +62,12 @@ class Sensores {
         colorSeleccionado: json["colorSeleccionado"],
         colorQueJuega: json["color_que_juega"],
         indiceColorEncendido:
-            (int.tryParse(json["indiceColorEncendido"].toString()) ?? 0) as int,
+            (int.tryParse(json["indiceColorEncendido"].toString()) ?? 0),
         indiceColorSeleccionado:
-            (int.tryParse(json["indiceColorSeleccionado"].toString()) ?? 0)
-                as int,
+            (int.tryParse(json["indiceColorSeleccionado"].toString()) ?? 0),
         puntaje: json["puntaje"],
         valorEnvioBoton:
-            (int.tryParse(json["valorEnvioBoton"].toString()) ?? 0) as int,
+            (int.tryParse(json["valorEnvioBoton"].toString()) ?? 0),
       );
 
   Map<String, dynamic> toJson() => {

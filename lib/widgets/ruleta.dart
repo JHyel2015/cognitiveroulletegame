@@ -56,7 +56,7 @@ class _RuletaState extends State<Ruleta> with SingleTickerProviderStateMixin {
     super.initState();
     _segments = _colors.isEmpty ? _segments : _colors.length;
     _controller = AnimationController(
-      duration: Duration(seconds: 5),
+      duration: const Duration(seconds: 5),
       vsync: this,
     )..addListener(() {
         setState(() {
@@ -80,7 +80,7 @@ class _RuletaState extends State<Ruleta> with SingleTickerProviderStateMixin {
 
   Future<void> _loadImage(Image image) {
     final Completer<void> completer = Completer();
-    image.image.resolve(ImageConfiguration()).addListener(
+    image.image.resolve(const ImageConfiguration()).addListener(
       ImageStreamListener((ImageInfo info, bool synchronousCall) {
         completer.complete();
       }),
@@ -140,9 +140,9 @@ class _RuletaState extends State<Ruleta> with SingleTickerProviderStateMixin {
     if (_images == null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Ruleta con Flecha'),
+          title: const Text('Ruleta con Flecha'),
         ),
-        body: Center(
+        body: const Center(
           child: CircularProgressIndicator(),
         ),
       );
@@ -150,7 +150,7 @@ class _RuletaState extends State<Ruleta> with SingleTickerProviderStateMixin {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ruleta Animada'),
+        title: const Text('Ruleta Animada'),
       ),
       body: Center(
         child: GestureDetector(
@@ -159,7 +159,7 @@ class _RuletaState extends State<Ruleta> with SingleTickerProviderStateMixin {
             alignment: Alignment.center,
             children: [
               CustomPaint(
-                size: Size(300, 300),
+                size: const Size(300, 300),
                 painter: RuletaPainter(0.0, _segments, _colors, _images),
               ),
               Transform.rotate(

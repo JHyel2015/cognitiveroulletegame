@@ -4,15 +4,14 @@ import 'package:cognitiveroulletegame/data/level_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/data/user_notifier.dart';
 import 'package:cognitiveroulletegame/firebase_secondary_options.dart';
-import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
 import 'package:cognitiveroulletegame/pages/initial_loading_screen.dart';
 import 'package:cognitiveroulletegame/pages/on_boarding_page.dart';
 import 'package:cognitiveroulletegame/services/image_cache_service.dart';
+import 'package:cognitiveroulletegame/services/snackbar_services.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -57,6 +56,12 @@ void main() async {
 
 class MainApp extends StatelessWidget {
   final userPreferences = UserPreferences();
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+
+  MainApp({super.key}) {
+    snackbarService.init(_scaffoldMessengerKey);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,21 +79,22 @@ class MainApp extends StatelessWidget {
             create: (context) => ImageCacheService()..init()),
       ],
       child: MaterialApp(
+        scaffoldMessengerKey: _scaffoldMessengerKey,
         // theme: ThemeData().copyWith(useMaterial3: true),
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-            seedColor: Color(0xff2C60FF),
-            surface: Color(0xffE4F3FA),
+            seedColor: const Color(0xff2C60FF),
+            surface: const Color(0xffE4F3FA),
           ),
         ),
         // themeMode: theme.isLightTheme ? ThemeMode.light : ThemeMode.dark,
         debugShowCheckedModeBanner: false,
         home: !userPreferences.areImagesDownloaded
-            ? InitialLoadingScreen()
-            : OnBoardingPage(),
+            ? const InitialLoadingScreen()
+            : const OnBoardingPage(),
         routes: {
           '/homepage': (context) => const HomePage(),
-          '/divinerpage': (context) => DivinerPage(),
+          '/divinerpage': (context) => const DivinerPage(),
         },
       ),
     );

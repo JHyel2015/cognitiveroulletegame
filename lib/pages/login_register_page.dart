@@ -1,3 +1,5 @@
+import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/services/snackbar_services.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:cognitiveroulletegame/pages/login_page.dart';
@@ -54,6 +56,10 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
         _connectionStatus = 'Desconocido';
         break;
     }
+    snackbarService.showSnackbar(
+      _connectionStatus,
+      backgroundColor: kColorPrimary,
+    );
   }
 
   @override

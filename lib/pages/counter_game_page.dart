@@ -15,6 +15,7 @@ import 'package:cognitiveroulletegame/services/image_cache_service.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:cognitiveroulletegame/widgets/ruleta_painter.dart';
+import 'package:cognitiveroulletegame/components/star_rating.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -30,11 +31,11 @@ import 'package:flutter_image_filters/flutter_image_filters.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-class GamePage extends StatefulWidget {
+class CounterGamePage extends StatefulWidget {
   int gameId;
   String title;
   String textToSpeak;
-  GamePage({
+  CounterGamePage({
     required this.gameId,
     required this.title,
     required this.textToSpeak,
@@ -42,10 +43,10 @@ class GamePage extends StatefulWidget {
   });
 
   @override
-  State<GamePage> createState() => _GamePageState();
+  State<CounterGamePage> createState() => _CounterGamePageState();
 }
 
-class _GamePageState extends State<GamePage>
+class _CounterGamePageState extends State<CounterGamePage>
     with SingleTickerProviderStateMixin {
   Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
@@ -60,6 +61,7 @@ class _GamePageState extends State<GamePage>
   final SpeakerService speakerService = SpeakerService();
 
   bool _ledOn = false;
+  int _counter = 0;
   int _valorEnvio = 0;
   Sensores _sensores = Sensores();
   // final FirebaseDatabase _databaseReference = FirebaseDatabase.instance;
@@ -67,8 +69,10 @@ class _GamePageState extends State<GamePage>
   late FirebaseDatabase _databaseReference;
   late StreamSubscription<DatabaseEvent> _ledOnSubscription;
   late StreamSubscription<DatabaseEvent> _sensoresSubscription;
+  late StreamSubscription<DatabaseEvent> _counterSubscription;
   late DatabaseReference _ledOnRef;
   late DatabaseReference _sensoresRef;
+  late DatabaseReference _counterRef;
 
   int isTappedOut = 0;
   int isCorrect = 0;
@@ -150,12 +154,15 @@ class _GamePageState extends State<GamePage>
 
     _ledOnRef = _databaseReference.ref('EstadoLED');
     _sensoresRef = _databaseReference.ref('esp32DataBase/Sensores');
+    _counterRef =
+        _databaseReference.ref('esp32DataBase/Sensores/vecesPrendido');
 
     _databaseReference.setPersistenceEnabled(true);
     _databaseReference.setPersistenceCacheSizeBytes(10000000);
 
     await _ledOnRef.keepSynced(true);
     await _sensoresRef.keepSynced(true);
+    await _counterRef.keepSynced(true);
 
     try {
       final counterSnapshot = await _ledOnRef.get();
@@ -221,6 +228,15 @@ class _GamePageState extends State<GamePage>
         }
       },
     );
+
+    _counterSubscription = _counterRef.onValue.listen(
+      (DatabaseEvent event) {
+        setState(() {
+          _counter = (event.snapshot.value ?? 0) as int;
+          print(event.snapshot.value);
+        });
+      },
+    );
   }
 
   Future<void> _speak() async {
@@ -233,60 +249,6 @@ class _GamePageState extends State<GamePage>
     // setState(() => ttsState = TtsState.stopped);
   }
 
-  Future<void> _getFiles() async {
-    final savedImageNotifier = Provider.of<ImageCacheService>(
-      context,
-      listen: false,
-    );
-
-    await savedImageNotifier.init();
-
-    final image = savedImageNotifier.getFilteredImages('animal-');
-
-    image.forEach((img) {
-      _imagesMap[img.name] = Image.file(File(img.imagePath));
-    });
-
-    _images = _imagesMap.values.toList();
-
-    randomElements();
-
-    setState(() {});
-    _animationController.forward(from: 0);
-    _speak();
-    _stopwatch.start();
-    Future.delayed(Duration(seconds: _time), () {
-      _animationController.stop();
-      print('Se cumplio el tiempo');
-      if (_isWakelockEnabled) {
-        WakelockPlus.disable();
-      }
-      _isWakelockEnabled = false;
-      openBox();
-    });
-  }
-
-  List<T> getRandomElements<T>(List<T> list, int n) {
-    list.shuffle();
-    return list.take(n).toList();
-  }
-
-  void randomElements() {
-    List<Image> randomImages = [];
-
-    for (var i = 0; i < _colorList.length; i++) {
-      var keyList = _imagesMap.keys
-          .toList()
-          .where((item) => item.contains('-${_colorList[i]}-'))
-          .toList();
-      keyList.shuffle();
-      keyList.first;
-      randomImages.add(_imagesMap[keyList.first]!);
-    }
-
-    _randomImages = randomImages;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -296,7 +258,7 @@ class _GamePageState extends State<GamePage>
     WakelockPlus.enable();
     _isWakelockEnabled = true;
 
-    _time = userPreferences.time;
+    _time = userPreferences.time * 2;
     int time = _time >= 60 ? 15 : _time;
 
     _animationController = AnimationController(
@@ -314,8 +276,6 @@ class _GamePageState extends State<GamePage>
           _showResult();
         }
       });
-
-    _getFiles();
 
     getRandomInt();
 
@@ -336,6 +296,17 @@ class _GamePageState extends State<GamePage>
           }),
         );
     addGameProgress();
+    _speak();
+    _stopwatch.start();
+    Future.delayed(Duration(seconds: _time), () {
+      _animationController.stop();
+      print('Se cumplio el tiempo');
+      if (_isWakelockEnabled) {
+        WakelockPlus.disable();
+      }
+      _isWakelockEnabled = false;
+      openBox();
+    });
   }
 
   @override
@@ -347,6 +318,7 @@ class _GamePageState extends State<GamePage>
     super.dispose();
     _ledOnSubscription.cancel();
     _sensoresSubscription.cancel();
+    _counterSubscription.cancel();
     WakelockPlus.disable();
     _isWakelockEnabled = false;
   }
@@ -367,35 +339,6 @@ class _GamePageState extends State<GamePage>
     setState(() {
       _randomNum = number;
     });
-  }
-
-  Future<Uint8List> _loadIamges(String path) async {
-    Uint8List result = await _getSilhouette(path);
-    if (_firstTime) {
-      await Future.delayed(Duration(seconds: 1));
-    }
-    _firstTime = false;
-    return result;
-  }
-
-  Future<void> _loadImages() async {
-    _images = _imagePaths.map((path) => Image.network(path)).toList();
-    await Future.wait(_images.map((image) => _loadImage(image)));
-
-    _randomImages = getRandomElements(_images, nElements);
-    setState(() {});
-    _animationController.forward(from: 0);
-    _spinAnimation();
-  }
-
-  Future<void> _loadImage(Image image) {
-    final Completer<void> completer = Completer();
-    image.image.resolve(ImageConfiguration()).addListener(
-      ImageStreamListener((ImageInfo info, bool synchronousCall) {
-        completer.complete();
-      }),
-    );
-    return completer.future;
   }
 
   void _spinAnimation() {
@@ -419,12 +362,6 @@ class _GamePageState extends State<GamePage>
     _visible = true;
     setState(() {});
     _intentos++;
-    // int colorSeleccionado = _colorList.indexWhere(
-    //     (color) => color.contains(_sensores.colorSeleccionado.toLowerCase()));
-
-    // if (_ledOn && colorSeleccionado != _segmentIndex) {
-    //   _segmentIndex = colorSeleccionado;
-    // }
 
     if (_randomNum == _segmentIndex) {
       _aciertos++;
@@ -437,35 +374,8 @@ class _GamePageState extends State<GamePage>
     Future.delayed(const Duration(seconds: 2), () {
       _animationController.forward(from: 0);
       getRandomInt();
-      randomElements();
       _visible = false;
     });
-  }
-
-  List<Widget> _buildPositionedImages() {
-    List<Widget> positionedImages = [];
-    final int imageCount = _randomImages.length;
-    final double centerX = 175; // half of the container width
-    final double centerY = 175; // half of the container height
-    final double radius = 120; // radius of the circle
-
-    for (int i = 0; i < imageCount; i++) {
-      final double angle = ((2 * pi * i) / imageCount) + (pi / 6);
-      final double x = centerX + radius * cos(angle);
-      final double y = centerY + radius * sin(angle);
-
-      positionedImages.add(
-        Positioned(
-          left: x - 50, // Adjust the offset to center the image
-          top: y - 50, // Adjust the offset to center the image
-          width: 100,
-          height: 100,
-          child: _randomImages[i],
-        ),
-      );
-    }
-
-    return positionedImages;
   }
 
   @override
@@ -473,7 +383,7 @@ class _GamePageState extends State<GamePage>
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
 
-    if (_images.isEmpty) {
+    if (_counter == 0) {
       return Container(
         color: kColorSecondary,
         child: SafeArea(
@@ -486,7 +396,14 @@ class _GamePageState extends State<GamePage>
               title: Text(widget.title),
             ),
             body: Center(
-              child: CircularProgressIndicator(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('Contando...'),
+                  CircularProgressIndicator(),
+                ],
+              ),
             ),
           ),
         ),
@@ -535,6 +452,24 @@ class _GamePageState extends State<GamePage>
             alignment: AlignmentDirectional.center,
             children: [
               Positioned(
+                top: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(10.0),
+                  margin: EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: Colors.blueAccent),
+                  ),
+                  child: Text(
+                    widget.textToSpeak,
+                    style: TextStyle(
+                      fontSize: 15,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              Positioned(
                 left: 10,
                 bottom: 10,
                 child: InkWell(
@@ -565,58 +500,6 @@ class _GamePageState extends State<GamePage>
                       ),
                     ),
                     const SizedBox(height: 35),
-                    Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Colors.grey,
-                        shape: BoxShape.circle,
-                      ),
-                      child: CircularProgressIndicator(
-                        backgroundColor: _colors[_randomNum],
-                        color: Colors.grey,
-                        value: _animationController.value,
-                        strokeWidth: 40.0,
-                      ),
-                    ),
-                    if (_randomImages.isNotEmpty)
-                      Expanded(
-                        child: Center(
-                          child: GestureDetector(
-                            onTap: _animationController.isAnimating
-                                ? _stopAnimation
-                                : _spinAnimation,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                CustomPaint(
-                                  size: Size(350, 350),
-                                  painter: RuletaPainter(0.0, 6, _colors, []),
-                                ),
-                                ..._buildPositionedImages(),
-                                Transform.rotate(
-                                  angle: _currentAngle,
-                                  child: Image.asset(
-                                    'assets/flecha.png',
-                                    width: 225,
-                                    height: 225,
-                                  ),
-                                ),
-                                Visibility(
-                                  visible: _visible,
-                                  child: Image.asset(
-                                    _segmentIndex == _randomNum
-                                        ? 'assets/check.png'
-                                        : 'assets/fail.webp',
-                                    width: 350,
-                                    height: 350,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -677,9 +560,7 @@ class _GamePageState extends State<GamePage>
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 15),
-                    Text(
-                      'Para enviar los resultados y regresar al menú principal, presiona el boton finalizar',
-                    ),
+                    StarRating(attempts: _intentos, correctAnswers: _aciertos),
                     SizedBox(height: 15),
                     Text(
                       'Resultados',
@@ -745,6 +626,10 @@ class _GamePageState extends State<GamePage>
                           borderRadius: BorderRadius.circular(25),
                         ),
                       ),
+                    ),
+                    SizedBox(height: 15),
+                    Text(
+                      'Para enviar los resultados y regresar al menú principal, presiona el boton finalizar',
                     ),
                     SizedBox(height: 15),
                     TextButton.icon(
@@ -819,36 +704,4 @@ class _GamePageState extends State<GamePage>
 
     colorsGameNotifier.addColorsGame(colorsGame);
   }
-}
-
-Future<Uint8List> _getSilhouette(String path) async {
-  // Load the image from network
-
-  http.Response response = await http.get(Uri.parse(path));
-
-  img.Image? image = img.decodeImage(response.bodyBytes);
-
-  // Convert to grayscale
-  image = img.grayscale(image!);
-
-  // Apply thresholding to obtain silhouette
-  img.contrast(image, contrast: 0);
-
-  // Convert to bytes
-  return Uint8List.fromList(img.encodePng(image));
-}
-
-Future<Uint8List> _getShadow(String path) async {
-  // Load the image from network
-  img.Image? image =
-      img.decodeImage((await rootBundle.load(path)).buffer.asUint8List());
-
-  // Convert to grayscale
-  image = img.grayscale(image!);
-
-  // Apply thresholding to obtain silhouette
-  img.luminanceThreshold(image);
-
-  // Convert to bytes
-  return Uint8List.fromList(img.encodePng(image));
 }

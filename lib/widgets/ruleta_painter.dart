@@ -1,6 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
-import 'dart:ui' as Ui;
 import 'package:flutter/material.dart';
 
 class RuletaPainter extends CustomPainter {
@@ -44,7 +42,7 @@ class RuletaPainter extends CustomPainter {
 
       final textSpan = TextSpan(
         text: (i + 1).toString(),
-        style: TextStyle(
+        style: const TextStyle(
           color: Colors.black,
           fontSize: 14,
         ),

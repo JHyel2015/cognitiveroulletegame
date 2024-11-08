@@ -1,4 +1,5 @@
-import 'package:cognitiveroulletegame/pages/game_page.dart';
+import 'package:cognitiveroulletegame/pages/counter_game_page.dart';
+import 'package:cognitiveroulletegame/pages/roullete_game_page.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
@@ -178,16 +179,33 @@ class _IntroGamePageState extends State<IntroGamePage> {
                   style: TextButton.styleFrom(backgroundColor: kColorPrimary),
                   onPressed: () {
                     _stop();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => GamePage(
-                          gameId: widget.gameId,
-                          title: widget.title,
-                          textToSpeak: widget.textToSpeak,
-                        ),
-                      ),
-                    );
+                    switch (widget.gameId) {
+                      case 1:
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RoulleteGamePage(
+                              gameId: widget.gameId,
+                              title: widget.title,
+                              textToSpeak: widget.textToSpeak,
+                            ),
+                          ),
+                        );
+                        break;
+                      case 2:
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CounterGamePage(
+                              gameId: widget.gameId,
+                              title: widget.title,
+                              textToSpeak: widget.textToSpeak,
+                            ),
+                          ),
+                        );
+                        break;
+                      default:
+                    }
                   },
                   label: Text(
                     'Continuar',

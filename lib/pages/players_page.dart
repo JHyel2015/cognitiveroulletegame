@@ -5,8 +5,11 @@ import 'package:cognitiveroulletegame/data/user_notifier.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
+import 'package:cognitiveroulletegame/services/snackbar_services.dart';
+import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 class PlayersPage extends StatefulWidget {
@@ -19,43 +22,16 @@ class PlayersPage extends StatefulWidget {
 class _PlayersPageState extends State<PlayersPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
+  final playerController = TextEditingController();
+  final UserPreferences userPreferences = UserPreferences();
 
-  List<Widget> players = [];
+  // List<Widget> players = [];
+  List<String> players = [];
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-
-    players.add(
-      Dismissible(
-        key: Key('User1'),
-        child: ListTile(
-          title: Text('User1'),
-          trailing: Icon(Icons.delete),
-          onTap: () {},
-        ),
-        onDismissed: (direction) {
-          setState(() {});
-          players.removeWhere((item) => item.key.toString().contains('User1'));
-        },
-      ),
-    );
-
-    players.add(
-      Dismissible(
-        key: Key('User2'),
-        child: ListTile(
-          title: Text('User2'),
-          trailing: Icon(Icons.delete),
-          onTap: () {},
-        ),
-        onDismissed: (direction) {
-          setState(() {});
-          players.removeWhere((item) => item.key.toString().contains('User2'));
-        },
-      ),
-    );
   }
 
   Future<void> signUserOut() async {
@@ -82,8 +58,219 @@ class _PlayersPageState extends State<PlayersPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AuthPage(),
+        builder: (context) => const AuthPage(),
       ),
+    );
+  }
+
+  void openBox() {
+    BuildContext dialogContext;
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        dialogContext = context;
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            child: Dialog(
+              shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10))),
+              child: Container(
+                height: 200, // Alto del diálogo
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Ingresa el nombre del jugador',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      controller: playerController,
+                      decoration: InputDecoration(
+                        hintText: 'Nombre de jugador',
+                        enabledBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(width: 2, color: kColorPrimary),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(width: 2, color: kColorPrimary),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      inputFormatters: [
+                        UpperCaseTextFormatter(),
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        TextButton.icon(
+                          style: TextButton.styleFrom(
+                            backgroundColor: kColorSecondary,
+                            side: BorderSide(color: kColorPrimary),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          label: Text(
+                            'Cancelar',
+                            style: TextStyle(color: kColorPrimary),
+                          ),
+                          icon: const Icon(
+                            Icons.cancel,
+                            color: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        TextButton.icon(
+                          style: TextButton.styleFrom(
+                            backgroundColor: kColorPrimary,
+                          ),
+                          onPressed: () {
+                            addPlayer();
+                            Navigator.pop(context);
+                          },
+                          label: Text(
+                            'Agregar',
+                            style: TextStyle(color: kColorSecondary),
+                          ),
+                          icon: Icon(
+                            Icons.check,
+                            color: kColorSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void addPlayer() {
+    setState(() {});
+    String key = playerController.text;
+    // if (!players.any((item) => item.key.toString().contains(key))) {
+    if (!players.any((item) => item.toString().contains(key))) {
+      players.add(key);
+      playerController.clear();
+      snackbarService.showSnackbar("Jugador $key creado exitosamente",
+          backgroundColor: kColorPrimary);
+    }
+  }
+
+  // Método para mostrar un diálogo de confirmación
+  Future<bool> _showConfirmationDialog(BuildContext context, String key) async {
+    return await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(
+                  "¿Estás seguro de que deseas eliminar el jugador \"$key\"?"),
+              content: Text(
+                "Recuerda que al eliminar este jugador todo el progreso también se eliminará",
+              ),
+              actions: [
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    side: BorderSide(color: kColorPrimary),
+                  ),
+                  label: Text(
+                    "Cerrar",
+                    style: TextStyle(color: kColorPrimary),
+                  ),
+                  icon: Icon(
+                    Icons.cancel,
+                    color: kColorPrimary,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pop(false); // Cierra el diálogo y devuelve falso
+                  },
+                ),
+                TextButton.icon(
+                  style: TextButton.styleFrom(backgroundColor: Colors.red),
+                  label: Text(
+                    "Eliminar",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  icon: const Icon(
+                    Icons.delete,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pop(true); // Cierra el diálogo y devuelve verdadero
+                  },
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+  }
+
+  // Función para mostrar el diálogo de confirmación
+  void _showDeleteConfirmationDialog(BuildContext context, String key) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title:
+              Text("¿Estás seguro de que deseas eliminar el jugador \"$key\"?"),
+          content: Text(
+            "Recuerda que al eliminar este jugador todo el progreso también se eliminará",
+          ),
+          actions: [
+            TextButton.icon(
+              style: TextButton.styleFrom(
+                side: BorderSide(color: kColorPrimary),
+              ),
+              label: Text(
+                "Cerrar",
+                style: TextStyle(color: kColorPrimary),
+              ),
+              icon: Icon(
+                Icons.cancel,
+                color: kColorPrimary,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Cierra el diálogo sin eliminar
+              },
+            ),
+            TextButton.icon(
+              style: TextButton.styleFrom(backgroundColor: Colors.red),
+              label: const Text(
+                "Eliminar",
+                style: TextStyle(color: Colors.white),
+              ),
+              icon: const Icon(
+                Icons.delete,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                // Elimina el item y cierra el diálogo
+                setState(() {
+                  players.removeWhere((item) => item == key);
+                });
+                Navigator.of(context).pop();
+                snackbarService.showSnackbar("Jugador $key eliminado");
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -113,30 +300,86 @@ class _PlayersPageState extends State<PlayersPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ...List.from(players),
-                    SizedBox(height: 10),
+                    ...players.map(
+                      (item) {
+                        String key = item;
+                        return Dismissible(
+                          key: Key(key),
+                          direction: DismissDirection.endToStart,
+                          confirmDismiss: (direction) async {
+                            return await _showConfirmationDialog(context, key);
+                          },
+                          onDismissed: (direction) {
+                            // Elimina el item y cierra el diálogo
+                            setState(() {
+                              players.removeWhere((item) => item == key);
+                            });
+                            snackbarService
+                                .showSnackbar("Jugador $key eliminado");
+                          },
+                          background: Container(
+                            color: Colors.red, // Color de fondo al deslizar
+                            alignment:
+                                Alignment.centerRight, // Alineado a la derecha
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: const Icon(Icons.delete,
+                                color: Colors.white,
+                                size: 30), // Icono de eliminar
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.blue[50], // Otro fondo de ListTile
+                              border:
+                                  Border.all(color: kColorPrimary, width: 2),
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey
+                                      .withOpacity(0.5), // Color de la sombra
+                                  spreadRadius: 2, // Extensión de la sombra
+                                  blurRadius: 5, // Difuminado de la sombra
+                                  offset:
+                                      Offset(0, 3), // Dirección de la sombra
+                                ),
+                              ],
+                            ),
+                            child: ListTile(
+                              title: Text(
+                                key,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: kColorPrimary,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              trailing: IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  // Muestra el diálogo de confirmación
+                                  _showDeleteConfirmationDialog(context, key);
+                                },
+                              ),
+                              onTap: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const HomePage(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ).toList(),
+                    const SizedBox(height: 10),
                     TextButton.icon(
                       style: TextButton.styleFrom(
                         backgroundColor: kColorPrimary,
                       ),
                       onPressed: () {
-                        setState(() {});
-                        String key = 'User${players.length + 1}';
-                        players.add(
-                          Dismissible(
-                            key: Key(key),
-                            child: ListTile(
-                              title: Text(key),
-                              trailing: Icon(Icons.delete),
-                              onTap: () {},
-                            ),
-                            onDismissed: (direction) {
-                              players.removeWhere(
-                                  (item) => item.key.toString().contains(key));
-                              setState(() {});
-                            },
-                          ),
-                        );
+                        openBox();
                       },
                       label: Text(
                         'Agregar usuario',
@@ -147,7 +390,7 @@ class _PlayersPageState extends State<PlayersPage> {
                         color: kColorSecondary,
                       ),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     TextButton.icon(
                       style: TextButton.styleFrom(
                         backgroundColor: kColorPrimary,
@@ -156,7 +399,7 @@ class _PlayersPageState extends State<PlayersPage> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => HomePage(),
+                            builder: (context) => const HomePage(),
                           ),
                         );
                       },
@@ -203,6 +446,20 @@ class _PlayersPageState extends State<PlayersPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// Formateador personalizado para convertir texto a mayúsculas
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
     );
   }
 }

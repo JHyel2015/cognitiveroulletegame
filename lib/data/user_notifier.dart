@@ -11,7 +11,7 @@ class UserNotifier extends ChangeNotifier {
   final UserService _userService = UserService();
   final SyncService _syncService = SyncService();
   final UserPreferences _userPreferences = UserPreferences();
-  List<UserData> _users = [];
+  final List<UserData> _users = [];
 
   UserData get user => _users.first;
 

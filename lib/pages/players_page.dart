@@ -2,6 +2,7 @@ import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/data/user_notifier.dart';
+import 'package:cognitiveroulletegame/models/player_data.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
@@ -22,16 +23,25 @@ class PlayersPage extends StatefulWidget {
 class _PlayersPageState extends State<PlayersPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
-  final playerController = TextEditingController();
+  final playerNameController = TextEditingController();
+  final playerAgeController = TextEditingController();
   final UserPreferences userPreferences = UserPreferences();
 
   // List<Widget> players = [];
-  List<String> players = [];
+  List<PlayerData> players = [];
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    _getCurrentUser();
+  }
+
+  void _getCurrentUser() {
+    User? user = _auth.currentUser;
+    setState(() {
+      _user = user;
+    });
   }
 
   Future<void> signUserOut() async {
@@ -45,7 +55,7 @@ class _PlayersPageState extends State<PlayersPage> {
     );
     final userNotifier = Provider.of<UserNotifier>(context, listen: false);
 
-    if (_user!.isAnonymous) {
+    if (_user != null && _user!.isAnonymous) {
       await _user?.delete();
     }
 
@@ -76,7 +86,7 @@ class _PlayersPageState extends State<PlayersPage> {
               shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(Radius.circular(10))),
               child: Container(
-                height: 200, // Alto del diálogo
+                height: 300, // Alto del diálogo
                 padding: const EdgeInsets.all(8),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -88,7 +98,7 @@ class _PlayersPageState extends State<PlayersPage> {
                     ),
                     const SizedBox(height: 15),
                     TextFormField(
-                      controller: playerController,
+                      controller: playerNameController,
                       decoration: InputDecoration(
                         hintText: 'Nombre de jugador',
                         enabledBorder: OutlineInputBorder(
@@ -104,6 +114,28 @@ class _PlayersPageState extends State<PlayersPage> {
                       ),
                       inputFormatters: [
                         UpperCaseTextFormatter(),
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      controller: playerAgeController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                          signed: true, decimal: false),
+                      decoration: InputDecoration(
+                        hintText: 'Edad del jugador',
+                        enabledBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(width: 2, color: kColorPrimary),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              BorderSide(width: 2, color: kColorPrimary),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
                       ],
                     ),
                     const SizedBox(height: 15),
@@ -160,11 +192,18 @@ class _PlayersPageState extends State<PlayersPage> {
 
   void addPlayer() {
     setState(() {});
-    String key = playerController.text;
+    PlayerData newPlayerData = PlayerData(
+      name: playerNameController.text,
+      age: int.tryParse(playerAgeController.text)!,
+      userId: _user!.uid,
+      timestamp: DateTime.now(),
+    );
+    String key = playerNameController.text;
+
     // if (!players.any((item) => item.key.toString().contains(key))) {
-    if (!players.any((item) => item.toString().contains(key))) {
-      players.add(key);
-      playerController.clear();
+    if (!players.any((item) => item.name.toString().contains(key))) {
+      players.add(newPlayerData);
+      playerNameController.clear();
       snackbarService.showSnackbar("Jugador $key creado exitosamente",
           backgroundColor: kColorPrimary);
     }
@@ -262,7 +301,7 @@ class _PlayersPageState extends State<PlayersPage> {
               onPressed: () {
                 // Elimina el item y cierra el diálogo
                 setState(() {
-                  players.removeWhere((item) => item == key);
+                  players.removeWhere((item) => item.name == key);
                 });
                 Navigator.of(context).pop();
                 snackbarService.showSnackbar("Jugador $key eliminado");
@@ -302,7 +341,7 @@ class _PlayersPageState extends State<PlayersPage> {
                   children: [
                     ...players.map(
                       (item) {
-                        String key = item;
+                        String key = item.name;
                         return Dismissible(
                           key: Key(key),
                           direction: DismissDirection.endToStart,
@@ -312,7 +351,7 @@ class _PlayersPageState extends State<PlayersPage> {
                           onDismissed: (direction) {
                             // Elimina el item y cierra el diálogo
                             setState(() {
-                              players.removeWhere((item) => item == key);
+                              players.removeWhere((item) => item.name == key);
                             });
                             snackbarService
                                 .showSnackbar("Jugador $key eliminado");

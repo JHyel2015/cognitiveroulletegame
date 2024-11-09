@@ -12,6 +12,12 @@ class PlayerDao {
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  Future<List<PlayerData>> getAllPlayers() async {
+    Database db = await dbHelper.database;
+    List<Map<String, dynamic>> data = await db.query(_table);
+    return data.map((e) => PlayerData.fromJson(e)).toList();
+  }
+
   Future<PlayerData> getPlayerByUID(String uid) async {
     Database db = await dbHelper.database;
     List<Map<String, dynamic>> data = await db.query(

@@ -9,6 +9,7 @@ class GameCard extends StatelessWidget {
   final Function() onPressed;
 
   const GameCard({
+    super.key,
     required this.color,
     required this.name,
     required this.image,
@@ -20,8 +21,8 @@ class GameCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 10),
-      margin: EdgeInsets.only(left: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      margin: const EdgeInsets.only(left: 10),
       decoration: BoxDecoration(
         color: Colors.blueAccent,
         borderRadius: BorderRadius.circular(25),
@@ -36,16 +37,16 @@ class GameCard extends StatelessWidget {
               height: 200,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage(this.image),
+                  image: AssetImage(image),
                   fit: BoxFit.fitWidth,
                 ),
-                color: this.color,
+                color: color,
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Center(
                 child: Stack(
                   children: [
-                    Text(this.name),
+                    Text(name),
                   ],
                 ),
               ),

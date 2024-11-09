@@ -14,6 +14,7 @@ class LoginRegisterPage extends StatefulWidget {
 
 class _LoginRegisterPageState extends State<LoginRegisterPage> {
   String _connectionStatus = 'Desconocido';
+  String _connectionStatusPrev = 'Desconocido';
   bool showLoginPage = true;
 
   @override
@@ -56,10 +57,13 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
         _connectionStatus = 'Desconocido';
         break;
     }
-    snackbarService.showSnackbar(
-      _connectionStatus,
-      backgroundColor: kColorPrimary,
-    );
+    if (_connectionStatus != _connectionStatusPrev) {
+      snackbarService.showSnackbar(
+        _connectionStatus,
+        backgroundColor: kColorPrimary,
+      );
+    }
+    _connectionStatusPrev = _connectionStatus;
   }
 
   @override

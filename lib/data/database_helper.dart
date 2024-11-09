@@ -1,5 +1,4 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:http/http.dart' as http;
 
 class DatabaseHelper {
   static const _databaseName = 'cognitiveroulletegame.db';
@@ -47,6 +46,7 @@ class DatabaseHelper {
         uid TEXT,
         userId TEXT,
         name TEXT,
+        age INTEGER,
         synced INTEGER DEFAULT 0,
         timestamp TEXT,
         CONSTRAINT pk_users PRIMARY KEY (uid)

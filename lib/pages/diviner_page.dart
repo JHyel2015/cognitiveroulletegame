@@ -32,16 +32,16 @@ class _DivinerPageState extends State<DivinerPage> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
-            title: Text('Menu'),
+            title: const Text('Menu'),
           ),
           body: Center(
-            child: Container(
+            child: SizedBox(
               width: double.infinity,
               height: 300,
               child: PageView.builder(
                 itemCount: gameNotifier.games.length,
                 controller: PageController(viewportFraction: 0.60),
-                physics: BouncingScrollPhysics(),
+                physics: const BouncingScrollPhysics(),
                 itemBuilder: (context, index) {
                   return GameCard(
                     color: Colors.amber,

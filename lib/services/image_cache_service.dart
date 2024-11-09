@@ -47,14 +47,14 @@ class ImageCacheService with ChangeNotifier {
       // Verificar si la imagen ya está almacenada localmente
       if (_cachedImage.contains(savedImage)) {
         if (sync) {
-          print('Descargando ${imageName} en ${savePath}');
+          print('Descargando $imageName en $savePath');
           Dio dio = Dio();
           await dio.download(url, savePath);
         }
         return;
       }
 
-      print('Descargando ${imageName} en ${savePath}');
+      print('Descargando $imageName en $savePath');
       // if (_cachedImages.containsKey(url)) return;
 
       // Descargar el enlace de Firebase

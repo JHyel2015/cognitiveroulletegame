@@ -4,6 +4,8 @@ import 'package:cognitiveroulletegame/models/player_data.dart';
 
 class PlayerService {
   static const _table = 'players';
+  static const _tableUsers = 'users';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final CollectionReference _collectionReference =
       FirebaseFirestore.instance.collection(_table);
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -13,7 +15,10 @@ class PlayerService {
   Future<void> addData(PlayerData player) async {
     _user = _auth.currentUser;
     if (_user != null && !_user!.isAnonymous) {
-      await _collectionReference
+      await _firestore
+          .collection(_tableUsers)
+          .doc(_user?.uid)
+          .collection(_table)
           .doc(player.uid.toString())
           .set(player.toJson());
     } else {
@@ -25,7 +30,10 @@ class PlayerService {
   Future<void> updateData(PlayerData player) async {
     _user = _auth.currentUser;
     if (_user != null && !_user!.isAnonymous) {
-      await _collectionReference
+      await _firestore
+          .collection(_tableUsers)
+          .doc(_user?.uid)
+          .collection(_table)
           .doc(player.uid.toString())
           .update(player.toJson());
     } else {
@@ -34,11 +42,27 @@ class PlayerService {
     }
   }
 
+  Future<QuerySnapshot> getAllItemsFromFirestore() async {
+    try {
+      return await _firestore
+          .collection(_tableUsers)
+          .doc(_user?.uid)
+          .collection(_table)
+          .get();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // Obtener un documento específico de Firestore por su ID
   Future<PlayerData?> getItemFromFirestore(String playerId) async {
     try {
-      DocumentSnapshot documentSnapshot =
-          await _collectionReference.doc(playerId).get();
+      DocumentSnapshot documentSnapshot = await _firestore
+          .collection(_tableUsers)
+          .doc(_user?.uid)
+          .collection(_table)
+          .doc(playerId)
+          .get();
 
       if (documentSnapshot.exists) {
         // El documento existe, devuelve un objeto Item creado a partir de los datos de Firestore

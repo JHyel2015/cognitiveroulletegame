@@ -37,53 +37,52 @@ class _SettingsPageState extends State<SettingsPage> {
   };
 
   final List<Widget> _timeList = [
-    Center(
+    const Center(
       child: Text('15 seg'),
     ),
-    Center(
+    const Center(
       child: Text('1 min'),
     ),
-    Center(
+    const Center(
       child: Text('5 min'),
     ),
-    Center(
+    const Center(
       child: Text('10 min'),
     ),
-    Center(
+    const Center(
       child: Text('15 min'),
     ),
-    Center(
+    const Center(
       child: Text('20 min'),
     ),
-    Center(
+    const Center(
       child: Text('25 min'),
     ),
-    Center(
+    const Center(
       child: Text('30 min'),
     ),
-    Center(
+    const Center(
       child: Text('35 min'),
     ),
-    Center(
+    const Center(
       child: Text('40 min'),
     ),
-    Center(
+    const Center(
       child: Text('45 min'),
     ),
-    Center(
+    const Center(
       child: Text('50 min'),
     ),
-    Center(
+    const Center(
       child: Text('55 min'),
     ),
-    Center(
+    const Center(
       child: Text('60 min'),
     ),
   ];
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _timeController.text = _timeMap.keys
         .toList()[_timeMap.values.toList().indexOf(userPreferences.time)];
@@ -103,7 +102,7 @@ class _SettingsPageState extends State<SettingsPage> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
-            title: Text('Ajustes'),
+            title: const Text('Ajustes'),
           ),
           body: CustomScrollView(
             slivers: [
@@ -126,8 +125,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     title: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Descargando archivos..."),
-                        SizedBox(height: 20),
+                        const Text("Descargando archivos..."),
+                        const SizedBox(height: 20),
                         ValueListenableBuilder<double>(
                           valueListenable: savedImageNotifier.progressNotifier,
                           builder: (context, progress, child) {
@@ -156,7 +155,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           // Puedes reiniciar la descarga
                           savedImageNotifier.getFiles();
                         },
-                        child: Text("Actualizar contenido"),
+                        child: const Text("Actualizar contenido"),
                       ),
                     ],
                   ),

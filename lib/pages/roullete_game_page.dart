@@ -16,11 +16,9 @@ import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:cognitiveroulletegame/widgets/ruleta_painter.dart';
 import 'package:cognitiveroulletegame/components/star_rating.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 // import 'package:flutter_blue/flutter_blue.dart';
@@ -83,7 +81,6 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   int _aciertos = 0;
   int _fallos = 0;
 
-  bool _btnActive = false;
   bool _visible = false;
   bool _firstTime = true;
 
@@ -99,10 +96,6 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
 
   List<String> fileURLs = [];
   List<String> randomFileURLs = [];
-
-  final List<double> _angleList = [
-    (2 * pi) - (pi / 6),
-  ];
 
   final List<String> _colorList = [
     'blue',
@@ -124,7 +117,6 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
 
   List<String> _imagePaths = [];
 
-  Map<String, String> _imageName = Map<String, String>();
   Map<String, Image> _imagesMap = Map<String, Image>();
 
   List<Image> _images = [];
@@ -133,10 +125,6 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   late TextureSource texture;
   late BrightnessShaderConfiguration configuration;
   bool textureLoaded = false;
-
-  // FlutterBlue bluetooth = FlutterBlue.instance;
-
-  double _downloadPercentage = 0;
 
   String? _playerProgressId;
 
@@ -244,9 +232,9 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
 
     final image = savedImageNotifier.getFilteredImages('animal-');
 
-    image.forEach((img) {
+    for (var img in image) {
       _imagesMap[img.name] = Image.file(File(img.imagePath));
-    });
+    }
 
     _images = _imagesMap.values.toList();
 
@@ -370,35 +358,6 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     });
   }
 
-  Future<Uint8List> _loadIamges(String path) async {
-    Uint8List result = await _getSilhouette(path);
-    if (_firstTime) {
-      await Future.delayed(Duration(seconds: 1));
-    }
-    _firstTime = false;
-    return result;
-  }
-
-  Future<void> _loadImages() async {
-    _images = _imagePaths.map((path) => Image.network(path)).toList();
-    await Future.wait(_images.map((image) => _loadImage(image)));
-
-    _randomImages = getRandomElements(_images, nElements);
-    setState(() {});
-    _animationController.forward(from: 0);
-    _spinAnimation();
-  }
-
-  Future<void> _loadImage(Image image) {
-    final Completer<void> completer = Completer();
-    image.image.resolve(ImageConfiguration()).addListener(
-      ImageStreamListener((ImageInfo info, bool synchronousCall) {
-        completer.complete();
-      }),
-    );
-    return completer.future;
-  }
-
   void _spinAnimation() {
     if (_animationController.isAnimating) return;
     _animationController.forward(from: 0);
@@ -420,12 +379,6 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     _visible = true;
     setState(() {});
     _intentos++;
-    // int colorSeleccionado = _colorList.indexWhere(
-    //     (color) => color.contains(_sensores.colorSeleccionado.toLowerCase()));
-
-    // if (_ledOn && colorSeleccionado != _segmentIndex) {
-    //   _segmentIndex = colorSeleccionado;
-    // }
 
     if (_randomNum == _segmentIndex) {
       _aciertos++;
@@ -446,9 +399,9 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   List<Widget> _buildPositionedImages() {
     List<Widget> positionedImages = [];
     final int imageCount = _randomImages.length;
-    final double centerX = 175; // half of the container width
-    final double centerY = 175; // half of the container height
-    final double radius = 120; // radius of the circle
+    const double centerX = 175; // half of the container width
+    const double centerY = 175; // half of the container height
+    const double radius = 120; // radius of the circle
 
     for (int i = 0; i < imageCount; i++) {
       final double angle = ((2 * pi * i) / imageCount) + (pi / 6);
@@ -822,36 +775,4 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
 
     colorsGameNotifier.addColorsGame(colorsGame);
   }
-}
-
-Future<Uint8List> _getSilhouette(String path) async {
-  // Load the image from network
-
-  http.Response response = await http.get(Uri.parse(path));
-
-  img.Image? image = img.decodeImage(response.bodyBytes);
-
-  // Convert to grayscale
-  image = img.grayscale(image!);
-
-  // Apply thresholding to obtain silhouette
-  img.contrast(image, contrast: 0);
-
-  // Convert to bytes
-  return Uint8List.fromList(img.encodePng(image));
-}
-
-Future<Uint8List> _getShadow(String path) async {
-  // Load the image from network
-  img.Image? image =
-      img.decodeImage((await rootBundle.load(path)).buffer.asUint8List());
-
-  // Convert to grayscale
-  image = img.grayscale(image!);
-
-  // Apply thresholding to obtain silhouette
-  img.luminanceThreshold(image);
-
-  // Convert to bytes
-  return Uint8List.fromList(img.encodePng(image));
 }

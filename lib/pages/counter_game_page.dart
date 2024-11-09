@@ -47,8 +47,8 @@ class CounterGamePage extends StatefulWidget {
 }
 
 class _CounterGamePageState extends State<CounterGamePage>
-    with SingleTickerProviderStateMixin {
-  Stopwatch _stopwatch = Stopwatch();
+    with TickerProviderStateMixin {
+  final Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
   int nElements = 6;
   final commentController = TextEditingController();
@@ -63,6 +63,7 @@ class _CounterGamePageState extends State<CounterGamePage>
   bool _ledOn = false;
   int _counter = 0;
   int _valorEnvio = 0;
+  int _valorRecibido = 0;
   Sensores _sensores = Sensores();
   // final FirebaseDatabase _databaseReference = FirebaseDatabase.instance;
   late FirebaseApp _secondaryApp;
@@ -86,26 +87,27 @@ class _CounterGamePageState extends State<CounterGamePage>
   int _aciertos = 0;
   int _fallos = 0;
 
-  bool _btnActive = false;
   bool _visible = false;
-  bool _firstTime = true;
 
   late Duration elapsedTime;
 
   late AnimationController _animationController;
   late Animation<double> _animation;
+
+  late AnimationController _animationController2;
+  late Animation<double> _animation1;
+  late Animation<double> _animation2;
+  late Animation<double> _animation3;
+  late Animation<double> _animation4;
+
   double _currentAngle = pi / 6;
   double _angle = pi / 2;
-  int _segments = 6;
+  final int _segments = 6;
 
   int _time = 0;
 
   List<String> fileURLs = [];
   List<String> randomFileURLs = [];
-
-  final List<double> _angleList = [
-    (2 * pi) - (pi / 6),
-  ];
 
   final List<String> _colorList = [
     'blue',
@@ -125,25 +127,16 @@ class _CounterGamePageState extends State<CounterGamePage>
     Colors.yellow,
   ];
 
-  List<String> _imagePaths = [];
-
-  Map<String, String> _imageName = Map<String, String>();
-  Map<String, Image> _imagesMap = Map<String, Image>();
-
-  List<Image> _images = [];
-  late List<Image> _randomImages = [];
-
   late TextureSource texture;
   late BrightnessShaderConfiguration configuration;
   bool textureLoaded = false;
 
-  // FlutterBlue bluetooth = FlutterBlue.instance;
-
-  double _downloadPercentage = 0;
-
   String? _playerProgressId;
 
   bool _isWakelockEnabled = false;
+
+  bool stopAnimation = false;
+  List<int> cardNumbers = [-1, -1, -1];
 
   Future<void> init() async {
     _secondaryApp = Firebase.app('esp32colores');
@@ -230,18 +223,23 @@ class _CounterGamePageState extends State<CounterGamePage>
     );
 
     _counterSubscription = _counterRef.onValue.listen(
-      (DatabaseEvent event) {
+      (DatabaseEvent event) async {
         setState(() {
           _counter = (event.snapshot.value ?? 0) as int;
           print(event.snapshot.value);
+          if (_counter > 0) {
+            stopAndGenerateNumbers();
+            _speak('Escoge entre las cartas el número que contaste');
+          }
         });
+        await _counterRef.set(0);
       },
     );
   }
 
-  Future<void> _speak() async {
+  Future<void> _speak(String textToSpeak) async {
     await speakerService.stop();
-    await speakerService.speak(widget.textToSpeak);
+    await speakerService.speak(textToSpeak);
   }
 
   Future _stop() async {
@@ -253,7 +251,6 @@ class _CounterGamePageState extends State<CounterGamePage>
   void initState() {
     super.initState();
     _ledOn = userPreferences.isLedOn;
-    init();
 
     WakelockPlus.enable();
     _isWakelockEnabled = true;
@@ -279,12 +276,49 @@ class _CounterGamePageState extends State<CounterGamePage>
 
     getRandomInt();
 
+    _animationController2 = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _animation1 = Tween<double>(begin: 80, end: 500).animate(
+      _animationController2,
+    );
+    _animation2 = Tween<double>(begin: 500, end: 80).animate(
+      _animationController2,
+    );
+    _animation3 = Tween<double>(begin: 80, end: 500).animate(
+      _animationController2,
+    );
+    _animation4 = Tween<double>(begin: 0, end: 6).animate(
+      _animationController2,
+    );
+
+    _animationController2.addListener(() {
+      if (stopAnimation) {
+        _animationController2.stop();
+        setState(() {
+          Random random = Random();
+          _segmentIndex = _counter;
+          cardNumbers = List.generate(3, (_) => random.nextInt(_counter) + 5);
+          if (!cardNumbers.contains(_counter)) {
+            cardNumbers[random.nextInt(2)] = _counter;
+          }
+        });
+      } else {
+        _animationController2.repeat();
+        setState(() {});
+      }
+    });
+
     final curvedAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.linear,
     );
     _animation = Tween<double>(begin: -(pi / 2), end: (2 * pi * 4) - (pi / 2))
         .animate(curvedAnimation);
+
+    init();
 
     configuration = BrightnessShaderConfiguration();
     configuration.brightness = 0.5;
@@ -296,10 +330,11 @@ class _CounterGamePageState extends State<CounterGamePage>
           }),
         );
     addGameProgress();
-    _speak();
+    _speak(widget.textToSpeak);
     _stopwatch.start();
     Future.delayed(Duration(seconds: _time), () {
       _animationController.stop();
+      _animationController2.stop();
       print('Se cumplio el tiempo');
       if (_isWakelockEnabled) {
         WakelockPlus.disable();
@@ -315,12 +350,20 @@ class _CounterGamePageState extends State<CounterGamePage>
     _stopwatch.stop();
     _animationController.dispose();
     _controller.dispose();
+    _animationController2.dispose();
     super.dispose();
     _ledOnSubscription.cancel();
     _sensoresSubscription.cancel();
     _counterSubscription.cancel();
     WakelockPlus.disable();
     _isWakelockEnabled = false;
+  }
+
+  void stopAndGenerateNumbers() {
+    setState(() {
+      stopAnimation = true;
+    });
+    _animationController2.reset();
   }
 
   void getRandomInt() async {
@@ -354,11 +397,6 @@ class _CounterGamePageState extends State<CounterGamePage>
   }
 
   void _showResult() async {
-    final double normalizedAngle = (_currentAngle % (2 * pi));
-    final double segmentAngle = (2 * pi / _segments);
-    _segmentIndex =
-        (_segments + (normalizedAngle / segmentAngle).floor()) % _segments;
-
     _visible = true;
     setState(() {});
     _intentos++;
@@ -369,11 +407,10 @@ class _CounterGamePageState extends State<CounterGamePage>
     } else {
       _fallos++;
     }
-    addColorsGame(_colorList[_randomNum], _colorList[_segmentIndex],
-        _randomNum == _segmentIndex);
     Future.delayed(const Duration(seconds: 2), () {
-      _animationController.forward(from: 0);
-      getRandomInt();
+      stopAnimation = false;
+      _animationController2.forward(from: 0);
+      cardNumbers = [-1, -1, -1];
       _visible = false;
     });
   }
@@ -382,33 +419,6 @@ class _CounterGamePageState extends State<CounterGamePage>
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
-
-    if (_counter == 0) {
-      return Container(
-        color: kColorSecondary,
-        child: SafeArea(
-          child: Scaffold(
-            appBar: AppBar(
-              automaticallyImplyLeading: false,
-              centerTitle: true,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              title: Text(widget.title),
-            ),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('Contando...'),
-                  CircularProgressIndicator(),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
 
     return Container(
       color: kColorSecondary,
@@ -426,7 +436,7 @@ class _CounterGamePageState extends State<CounterGamePage>
                   _stop();
                   userPreferences.isMute = !userPreferences.isMute;
                   if (!userPreferences.isMute) {
-                    _speak();
+                    _speak(widget.textToSpeak);
                   }
                 },
                 icon: userPreferences.isMute
@@ -440,7 +450,9 @@ class _CounterGamePageState extends State<CounterGamePage>
                       ),
               ),
               IconButton(
-                onPressed: _speak,
+                onPressed: () {
+                  _speak(widget.textToSpeak);
+                },
                 icon: Icon(
                   Icons.volume_up,
                   color: kColorPrimary,
@@ -473,7 +485,9 @@ class _CounterGamePageState extends State<CounterGamePage>
                 left: 10,
                 bottom: 10,
                 child: InkWell(
-                  onTap: _speak,
+                  onTap: () {
+                    _speak(widget.textToSpeak);
+                  },
                   child: Image.asset(
                     'assets/robot.gif',
                     width: width * .25,
@@ -481,25 +495,41 @@ class _CounterGamePageState extends State<CounterGamePage>
                 ),
               ),
               Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Stack(
+                  alignment: AlignmentDirectional.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10.0),
-                      margin: EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(color: Colors.blueAccent),
-                      ),
-                      child: Text(
-                        widget.textToSpeak,
-                        style: TextStyle(
-                          fontSize: 15,
-                        ),
-                        textAlign: TextAlign.center,
+                    Positioned(
+                      top: _animation1.value,
+                      left: 50,
+                      child: Transform(
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.01)
+                          ..rotateY(_animation4.value),
+                        alignment: FractionalOffset.center,
+                        child: _buildCard(cardNumbers[0]),
                       ),
                     ),
-                    const SizedBox(height: 35),
+                    Positioned(
+                      top: _animation2.value,
+                      child: Transform(
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.01)
+                          ..rotateY(_animation4.value),
+                        alignment: FractionalOffset.center,
+                        child: _buildCard(cardNumbers[1]),
+                      ),
+                    ),
+                    Positioned(
+                      top: _animation3.value,
+                      right: 50,
+                      child: Transform(
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.01)
+                          ..rotateY(_animation4.value),
+                        alignment: FractionalOffset.center,
+                        child: _buildCard(cardNumbers[2]),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -530,6 +560,51 @@ class _CounterGamePageState extends State<CounterGamePage>
                 ),
               ),
             ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: stopAndGenerateNumbers,
+            child: Icon(Icons.stop),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard(int number) {
+    return GestureDetector(
+      onTap: () {
+        if (!_animationController2.isAnimating) {
+          setState(() {
+            _randomNum = number;
+          });
+          _showResult();
+        }
+      },
+      child: Container(
+        width: 100,
+        height: 150,
+        decoration: BoxDecoration(
+          color: kColorPrimary,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 8,
+              offset: Offset(2, 2),
+            ),
+            if (_visible && _segmentIndex == number)
+              BoxShadow(
+                color: Colors.green,
+                blurRadius: 1,
+                spreadRadius: 8,
+                offset: Offset(0, 0),
+              ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            number == -1 ? '?' : number.toString(),
+            style: TextStyle(color: Colors.white, fontSize: 24),
           ),
         ),
       ),

@@ -46,16 +46,16 @@ import 'package:flutter/material.dart';
 var kMertiolateColor = const MaterialColor(
   0xffda4945,
   <int, Color>{
-    50: const Color(0xffFBE9E9),
-    100: const Color(0xffF4C8C7),
-    200: const Color(0xffEDA4A2),
-    300: const Color(0xffE5807D),
-    400: const Color(0xffE06461),
-    500: const Color(0xffda4945),
-    600: const Color(0xffD6423E),
-    700: const Color(0xffD03936),
-    800: const Color(0xffCB312E),
-    900: const Color(0xffC2211F),
+    50: Color(0xffFBE9E9),
+    100: Color(0xffF4C8C7),
+    200: Color(0xffEDA4A2),
+    300: Color(0xffE5807D),
+    400: Color(0xffE06461),
+    500: Color(0xffda4945),
+    600: Color(0xffD6423E),
+    700: Color(0xffD03936),
+    800: Color(0xffCB312E),
+    900: Color(0xffC2211F),
   },
 );
 

@@ -51,10 +51,10 @@ class PlayerNotifier extends ChangeNotifier {
     return _players;
   }
 
-  // void sync() async {
-  //   await _syncService.syncPlayerData();
-  //   notifyListeners();
-  // }
+  void sync() async {
+    await _syncService.syncPlayerData();
+    notifyListeners();
+  }
 
   void clearData() async {
     await _playerDao.clearData();

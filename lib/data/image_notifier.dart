@@ -2,11 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cognitiveroulletegame/data/image_dao.dart';
 import 'package:cognitiveroulletegame/models/saved_image.dart';
-import 'package:cognitiveroulletegame/services/sync_service.dart';
 
 class ImageNotifier extends ChangeNotifier {
   final ImageDao _imageDao = ImageDao();
-  final SyncService _syncService = SyncService();
   List<SavedImage> _images = [];
 
   List<SavedImage> get images => _images;
@@ -51,7 +49,6 @@ class ImageNotifier extends ChangeNotifier {
   }
 
   void sync() async {
-    // await _syncService.syncImageData();
     notifyListeners();
   }
 }

@@ -4,7 +4,8 @@ class StarRating extends StatelessWidget {
   final int attempts;
   final int correctAnswers;
 
-  StarRating({required this.attempts, required this.correctAnswers});
+  const StarRating(
+      {super.key, required this.attempts, required this.correctAnswers});
 
   int getStarCount() {
     if (attempts == 0) {

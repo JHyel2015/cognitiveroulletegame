@@ -1,6 +1,7 @@
 import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
 import 'package:cognitiveroulletegame/data/game_notifier.dart';
 import 'package:cognitiveroulletegame/data/level_notifier.dart';
+import 'package:cognitiveroulletegame/data/player_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/data/user_notifier.dart';
 import 'package:cognitiveroulletegame/firebase_secondary_options.dart';
@@ -38,6 +39,9 @@ void main() async {
   SyncService syncService = SyncService();
   await syncService.syncLevelData();
   await syncService.syncGameData();
+  await syncService.syncColorsGameData();
+  await syncService.syncPlayerData();
+  await syncService.syncPlayerProgressData();
 
   DatabaseHelper dbHelper = DatabaseHelper.instance;
 
@@ -68,6 +72,7 @@ class MainApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => UserNotifier()..init()),
+        ChangeNotifierProvider(create: (context) => PlayerNotifier()..init()),
         ChangeNotifierProvider(create: (context) => LevelNotifier()..init()),
         ChangeNotifierProvider(
             create: (context) => PlayerProgressNotifier()..init()),

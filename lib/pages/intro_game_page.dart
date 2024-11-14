@@ -154,84 +154,104 @@ class _IntroGamePageState extends State<IntroGamePage> {
               ),
             ],
           ),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: width * .8,
-                  height: 300,
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(color: Colors.blueAccent),
-                  ),
-                  child: Center(
-                    child: Text(
-                      widget.textToSpeak,
-                      style: TextStyle(fontSize: 25.0),
-                      textAlign: TextAlign.center,
+          body: Stack(
+            children: [
+              Positioned(
+                left: 10,
+                bottom: 10,
+                child: InkWell(
+                  onTap: _speak,
+                  child: Hero(
+                    tag: 'robot',
+                    child: Image.asset(
+                      'assets/robot.gif',
+                      width: width * .40,
                     ),
                   ),
                 ),
-                TextButton.icon(
-                  style: TextButton.styleFrom(backgroundColor: kColorPrimary),
-                  onPressed: () {
-                    _stop();
-                    switch (widget.gameId) {
-                      case 1:
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => RoulleteGamePage(
-                              gameId: widget.gameId,
-                              title: widget.title,
-                              textToSpeak: widget.textToSpeak,
-                            ),
-                          ),
-                        );
-                        break;
-                      case 2:
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CounterGamePage(
-                              gameId: widget.gameId,
-                              title: widget.title,
-                              textToSpeak: widget.textToSpeak,
-                            ),
-                          ),
-                        );
-                        break;
-                      default:
-                    }
-                  },
-                  label: Text(
-                    'Continuar',
-                    style: TextStyle(color: kColorSecondary),
-                  ),
-                  icon: Icon(
-                    Icons.play_arrow,
-                    color: kColorSecondary,
-                  ),
+              ),
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: width * .8,
+                      height: 300,
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(color: Colors.blueAccent),
+                      ),
+                      child: Center(
+                        child: Text(
+                          widget.textToSpeak,
+                          style: TextStyle(fontSize: 25.0),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      style:
+                          TextButton.styleFrom(backgroundColor: kColorPrimary),
+                      onPressed: () {
+                        _stop();
+                        switch (widget.gameId) {
+                          case 1:
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RoulleteGamePage(
+                                  gameId: widget.gameId,
+                                  title: widget.title,
+                                  textToSpeak: widget.textToSpeak,
+                                ),
+                              ),
+                            );
+                            break;
+                          case 2:
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CounterGamePage(
+                                  gameId: widget.gameId,
+                                  title: widget.title,
+                                  textToSpeak: widget.textToSpeak,
+                                ),
+                              ),
+                            );
+                            break;
+                          default:
+                        }
+                      },
+                      label: Text(
+                        'Continuar',
+                        style: TextStyle(color: kColorSecondary),
+                      ),
+                      icon: Icon(
+                        Icons.play_arrow,
+                        color: kColorSecondary,
+                      ),
+                    ),
+                    TextButton.icon(
+                      style:
+                          TextButton.styleFrom(backgroundColor: kColorPrimary),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      label: Text(
+                        'Regresar',
+                        style: TextStyle(color: kColorSecondary),
+                      ),
+                      icon: Icon(
+                        Icons.undo,
+                        color: kColorSecondary,
+                      ),
+                    ),
+                  ],
                 ),
-                TextButton.icon(
-                  style: TextButton.styleFrom(backgroundColor: kColorPrimary),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  label: Text(
-                    'Regresar',
-                    style: TextStyle(color: kColorSecondary),
-                  ),
-                  icon: Icon(
-                    Icons.undo,
-                    color: kColorSecondary,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

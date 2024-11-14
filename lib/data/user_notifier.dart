@@ -47,7 +47,7 @@ class UserNotifier extends ChangeNotifier {
   }
 
   // get user list
-  List<UserData> getAllTransactionList() {
+  List<UserData> getAllUsersList() {
     return _users;
   }
 

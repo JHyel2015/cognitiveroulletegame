@@ -48,6 +48,15 @@ class PlayerDao {
     );
   }
 
+  Future<int> deletePlayer(PlayerData player) async {
+    Database db = await dbHelper.database;
+    return await db.delete(
+      _table,
+      where: 'uid = ?',
+      whereArgs: [player.uid],
+    );
+  }
+
   Future<void> clearData() async {
     await dbHelper.clearData(_table);
   }

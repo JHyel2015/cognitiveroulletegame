@@ -4,12 +4,14 @@ import 'dart:async';
 
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
+import 'package:cognitiveroulletegame/data/player_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/data/user_notifier.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/players_page.dart';
 import 'package:cognitiveroulletegame/pages/settings_page.dart';
+import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/services/sync_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -39,6 +41,7 @@ class _HomePageState extends State<HomePage> {
   late FirebaseApp _secondaryApp;
   late FirebaseDatabase _databaseReference;
   late StreamSubscription<DatabaseEvent> _ledOnSubscription;
+  final SpeakerService speakerService = SpeakerService();
   late DatabaseReference _ledOnRef;
   User? _user;
 
@@ -49,6 +52,8 @@ class _HomePageState extends State<HomePage> {
 
   String _address = "...";
   String _name = "...";
+  String _textToSpeak =
+      'Hola playerName, estás en la pantalla principal. Puedes dar clic en el botón Jugar para empezar.';
 
   bool _toggleValue = false;
 
@@ -63,6 +68,22 @@ class _HomePageState extends State<HomePage> {
       syncService.syncPlayerProgressData();
       syncService.syncColorsGameData();
     }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _stop();
+  }
+
+  Future<void> _speak() async {
+    await speakerService.stop();
+    await speakerService.speak(_textToSpeak);
+  }
+
+  Future _stop() async {
+    await speakerService.stop();
+    // setState(() => ttsState = TtsState.stopped);
   }
 
   Future<void> init() async {
@@ -156,7 +177,12 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
+    final playerNotifier = Provider.of<PlayerNotifier>(context);
+
+    _textToSpeak =
+        _textToSpeak.replaceAll('playerName', playerNotifier.player!.name);
 
     _userPreferences.isAnonymous = _user != null ? _user!.isAnonymous : false;
 
@@ -199,12 +225,20 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Cognitive Game',
+                      'Hola ${playerNotifier.player!.name}',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 30,
                       ),
                     ),
-                    Image.asset('assets/splash.gif', height: 270, width: 270),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Cognitive Game',
+                      style: TextStyle(
+                        fontSize: 20,
+                      ),
+                    ),
+                    Image.asset('assets/splash.gif',
+                        height: width * .30, width: width * .3),
                     const SizedBox(height: 10),
                     TextButton.icon(
                       style: TextButton.styleFrom(
@@ -292,30 +326,35 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               Positioned(
-                left: (MediaQuery.of(context).size.width / 2) - 75,
+                left: 0,
                 top: 10,
                 child: Image.asset(
                   'assets/EPN.png',
-                  height: 150,
-                  width: 150,
+                  height: 125,
+                  width: 125,
                 ),
               ),
               Positioned(
                 left: 10,
                 bottom: 10,
-                child: Image.asset(
-                  'assets/polhibou.png',
-                  height: 150,
-                  width: 150,
+                child: InkWell(
+                  onTap: _speak,
+                  child: Hero(
+                    tag: 'robot',
+                    child: Image.asset(
+                      'assets/robot.gif',
+                      width: width * .40,
+                    ),
+                  ),
                 ),
               ),
               Positioned(
                 right: 10,
-                bottom: 10,
+                top: 10,
                 child: Image.asset(
                   'assets/FIS.png',
-                  height: 150,
-                  width: 150,
+                  height: 125,
+                  width: 125,
                 ),
               ),
               Positioned(

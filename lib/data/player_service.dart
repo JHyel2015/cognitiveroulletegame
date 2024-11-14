@@ -5,33 +5,29 @@ import 'package:cognitiveroulletegame/models/player_data.dart';
 class PlayerService {
   static const _table = 'players';
   static const _tableUsers = 'users';
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final CollectionReference _collectionReference =
-      FirebaseFirestore.instance.collection(_table);
+      FirebaseFirestore.instance.collection(_tableUsers);
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
 
   // FireStore
-  Future<void> addData(PlayerData player) async {
+  Future<String> addData(PlayerData player) async {
     _user = _auth.currentUser;
+    DocumentReference documentReference =
+        _collectionReference.doc(_user?.uid).collection(_table).doc();
     if (_user != null && !_user!.isAnonymous) {
-      await _firestore
-          .collection(_tableUsers)
-          .doc(_user?.uid)
-          .collection(_table)
-          .doc(player.uid.toString())
-          .set(player.toJson());
+      await documentReference.set(player.toJson());
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
       print('Usuario invitado, no puede guardar datos');
     }
+    return documentReference.id;
   }
 
   Future<void> updateData(PlayerData player) async {
     _user = _auth.currentUser;
     if (_user != null && !_user!.isAnonymous) {
-      await _firestore
-          .collection(_tableUsers)
+      await _collectionReference
           .doc(_user?.uid)
           .collection(_table)
           .doc(player.uid.toString())
@@ -42,10 +38,24 @@ class PlayerService {
     }
   }
 
+  Future<void> deleteData(PlayerData player) async {
+    _user = _auth.currentUser;
+    if (_user != null && !_user!.isAnonymous) {
+      await _collectionReference
+          .doc(_user?.uid)
+          .collection(_table)
+          .doc(player.uid.toString())
+          .delete();
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      print('Usuario invitado, no puede guardar datos');
+    }
+  }
+
   Future<QuerySnapshot> getAllItemsFromFirestore() async {
+    _user = _auth.currentUser;
     try {
-      return await _firestore
-          .collection(_tableUsers)
+      return await _collectionReference
           .doc(_user?.uid)
           .collection(_table)
           .get();
@@ -56,9 +66,9 @@ class PlayerService {
 
   // Obtener un documento específico de Firestore por su ID
   Future<PlayerData?> getItemFromFirestore(String playerId) async {
+    _user = _auth.currentUser;
     try {
-      DocumentSnapshot documentSnapshot = await _firestore
-          .collection(_tableUsers)
+      DocumentSnapshot documentSnapshot = await _collectionReference
           .doc(_user?.uid)
           .collection(_table)
           .doc(playerId)

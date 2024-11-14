@@ -75,6 +75,8 @@ class SyncService {
         // Verificar si el elemento ya existe en SQLite
         var localLevel = await levelDao.getLevelByID(itemId!);
 
+        localLevel.id = itemId;
+
         if (localLevel != null) {
           // Actualizar el elemento en SQLite si ya existe
           if (firestoreLevel.timestamp.compareTo(localLevel.timestamp) == 1 &&
@@ -139,6 +141,7 @@ class SyncService {
         var localPlayerProgress =
             await playerProgressDao.getPlayerProgressByID(itemId);
         firestorePlayerProgress.userId = userPreferences.storedUID;
+        firestorePlayerProgress.id = itemId;
 
         if (localPlayerProgress != null) {
           // Actualizar el elemento en SQLite si ya existe
@@ -200,6 +203,8 @@ class SyncService {
 
         // Verificar si el elemento ya existe en SQLite
         var localGame = await gameDao.getGameByID(itemId!);
+
+        localGame?.id = itemId;
 
         if (localGame != null) {
           // Actualizar el elemento en SQLite si ya existe
@@ -263,6 +268,7 @@ class SyncService {
         var localColorsGame = await colorsGameDao.getColorsGameByID(itemId);
 
         firestoreColorsGame.userId = userPreferences.storedUID;
+        firestoreColorsGame.id = itemId;
 
         if (localColorsGame != null) {
           // Actualizar el elemento en SQLite si ya existe
@@ -373,6 +379,7 @@ class SyncService {
 
         // Verificar si el elemento ya existe en SQLite
         var localPlayer = await playerDao.getPlayerByUID(itemId);
+        localPlayer.uid = itemId;
 
         if (localPlayer != null) {
           // Actualizar el elemento en SQLite si ya existe

@@ -49,9 +49,17 @@ class PlayerProgressNotifier extends ChangeNotifier {
   }
 
   // delete playerProgress
-  void deletePlayerProgressItem(PlayerProgress playerProgress) async {
+  Future<void> deletePlayerProgressItem(PlayerProgress playerProgress) async {
     await _playerProgressDao.deletePlayerProgress(playerProgress.id!);
     await _playerProgressService.deleteData(playerProgress);
+    _playerProgresss = await _playerProgressDao.getAllPlayerProgresss();
+    notifyListeners();
+  }
+
+  // delete playerProgress
+  Future<void> deletePlayerProgressByPlayerID(String playerUID) async {
+    await _playerProgressDao.deletePlayerProgressByPlayerID(playerUID);
+    await _playerProgressService.deleteDataByPlayerUID(playerUID);
     _playerProgresss = await _playerProgressDao.getAllPlayerProgresss();
     notifyListeners();
   }

@@ -55,6 +55,15 @@ class ColorsGameDao {
     );
   }
 
+  Future<int> deleteColorsGameByPlayerID(String playerId) async {
+    Database db = await dbHelper.database;
+    return await db.delete(
+      _table,
+      where: 'userId = ?',
+      whereArgs: [playerId],
+    );
+  }
+
   Future<void> clearData() async {
     await dbHelper.clearData(_table);
   }

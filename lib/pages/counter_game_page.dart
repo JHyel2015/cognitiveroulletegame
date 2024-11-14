@@ -7,9 +7,11 @@ import 'dart:typed_data';
 
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
+import 'package:cognitiveroulletegame/data/player_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/models/colors_game.dart';
 import 'package:cognitiveroulletegame/models/esp32.dart';
+import 'package:cognitiveroulletegame/models/player_data.dart';
 import 'package:cognitiveroulletegame/models/player_progress.dart';
 import 'package:cognitiveroulletegame/services/image_cache_service.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
@@ -58,6 +60,7 @@ class _CounterGamePageState extends State<CounterGamePage>
   final UserPreferences userPreferences = UserPreferences();
 
   final _user = FirebaseAuth.instance.currentUser;
+  late PlayerData _player;
   final SpeakerService speakerService = SpeakerService();
 
   bool _ledOn = false;
@@ -73,6 +76,7 @@ class _CounterGamePageState extends State<CounterGamePage>
   late StreamSubscription<DatabaseEvent> _counterSubscription;
   late DatabaseReference _ledOnRef;
   late DatabaseReference _sensoresRef;
+  late DatabaseReference _levelRef;
   late DatabaseReference _counterRef;
 
   int isTappedOut = 0;
@@ -147,6 +151,7 @@ class _CounterGamePageState extends State<CounterGamePage>
 
     _ledOnRef = _databaseReference.ref('EstadoLED');
     _sensoresRef = _databaseReference.ref('esp32DataBase/Sensores');
+    _levelRef = _databaseReference.ref('esp32DataBase/Sensores/nivel');
     _counterRef =
         _databaseReference.ref('esp32DataBase/Sensores/vecesPrendido');
 
@@ -156,6 +161,9 @@ class _CounterGamePageState extends State<CounterGamePage>
     await _ledOnRef.keepSynced(true);
     await _sensoresRef.keepSynced(true);
     await _counterRef.keepSynced(true);
+    await _levelRef.keepSynced(true);
+
+    _levelRef.set(2);
 
     try {
       final counterSnapshot = await _ledOnRef.get();
@@ -419,6 +427,9 @@ class _CounterGamePageState extends State<CounterGamePage>
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
+    final playerNotifier = Provider.of<PlayerNotifier>(context);
+
+    _player = playerNotifier.player!;
 
     return Container(
       color: kColorSecondary,
@@ -488,9 +499,12 @@ class _CounterGamePageState extends State<CounterGamePage>
                   onTap: () {
                     _speak(widget.textToSpeak);
                   },
-                  child: Image.asset(
-                    'assets/robot.gif',
-                    width: width * .25,
+                  child: Hero(
+                    tag: 'robot',
+                    child: Image.asset(
+                      'assets/robot.gif',
+                      width: width * .25,
+                    ),
                   ),
                 ),
               ),
@@ -743,7 +757,7 @@ class _CounterGamePageState extends State<CounterGamePage>
     );
 
     PlayerProgress playerProgress = PlayerProgress(
-      userId: _user!.uid,
+      userId: _player.uid!,
       gameId: widget.gameId,
       levelId: 0,
       score: _aciertos > 0 ? (_intentos / _aciertos).floor() : 0,
@@ -770,7 +784,7 @@ class _CounterGamePageState extends State<CounterGamePage>
     ColorsGame colorsGame = ColorsGame(
       playerProgressId: _playerProgressId!,
       gameId: widget.gameId,
-      userId: _user!.uid,
+      userId: _player.uid!,
       selectedColor: selectedColor,
       correctColor: correctColor,
       success: success,

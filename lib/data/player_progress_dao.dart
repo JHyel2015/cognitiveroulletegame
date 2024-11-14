@@ -55,6 +55,15 @@ class PlayerProgressDao {
     );
   }
 
+  Future<int> deletePlayerProgressByPlayerID(String playerUID) async {
+    Database db = await dbHelper.database;
+    return await db.delete(
+      _table,
+      where: 'userId = ?',
+      whereArgs: [playerUID],
+    );
+  }
+
   Future<void> clearData() async {
     await dbHelper.clearData(_table);
   }

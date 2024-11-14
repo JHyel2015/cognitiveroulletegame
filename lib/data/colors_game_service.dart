@@ -4,15 +4,22 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class ColorsGameService {
   static const _table = 'colors_games';
+  static const _tableUsers = 'users';
+  static const _tablePlayers = 'players';
   final CollectionReference _collectionReference =
-      FirebaseFirestore.instance.collection(_table);
+      FirebaseFirestore.instance.collection(_tableUsers);
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
 
   // FireStore
   Future<String> addData(ColorsGame colorsGame) async {
     _user = _auth.currentUser;
-    DocumentReference documentReference = _collectionReference.doc();
+    DocumentReference documentReference = _collectionReference
+        .doc(_user?.uid)
+        .collection(_tablePlayers)
+        .doc(colorsGame.userId)
+        .collection(_table)
+        .doc();
     print(
         '${ColorsGameService._table} ${_user!.isAnonymous.toString()} ${documentReference.id}');
     if (_user != null && !_user!.isAnonymous) {
@@ -28,6 +35,10 @@ class ColorsGameService {
     _user = _auth.currentUser;
     if (_user != null && !_user!.isAnonymous) {
       await _collectionReference
+          .doc(_user?.uid)
+          .collection(_tablePlayers)
+          .doc(colorsGame.userId)
+          .collection(_table)
           .doc(colorsGame.id.toString())
           .update(colorsGame.toJson());
     } else {
@@ -39,7 +50,13 @@ class ColorsGameService {
   Future<void> deleteData(ColorsGame colorsGame) async {
     _user = _auth.currentUser;
     if (_user != null && !_user!.isAnonymous) {
-      await _collectionReference.doc(colorsGame.id.toString()).delete();
+      await _collectionReference
+          .doc(_user?.uid)
+          .collection(_tablePlayers)
+          .doc(colorsGame.userId)
+          .collection(_table)
+          .doc(colorsGame.id.toString())
+          .delete();
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
       print('Usuario invitado, no puede borrar datos');
@@ -47,13 +64,24 @@ class ColorsGameService {
   }
 
   Stream<List<ColorsGame>> getFirestoreData() {
-    return _collectionReference.snapshots().map((snapshot) =>
-        snapshot.docs.map((docs) => ColorsGame.fromQuery(docs)).toList());
+    return _collectionReference
+        .doc(_user?.uid)
+        .collection(_tablePlayers)
+        .doc()
+        .collection(_table)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((docs) => ColorsGame.fromQuery(docs)).toList());
   }
 
   Future<QuerySnapshot> getAllItemsFromFirestore() async {
     try {
-      return await _collectionReference.get();
+      return await _collectionReference
+          .doc(_user?.uid)
+          .collection(_tablePlayers)
+          .doc()
+          .collection(_table)
+          .get();
     } catch (e) {
       rethrow;
     }
@@ -62,8 +90,13 @@ class ColorsGameService {
   // Obtener un documento específico de Firestore por su ID
   Future<ColorsGame?> getItemFromFirestore(String colorsGameId) async {
     try {
-      DocumentSnapshot documentSnapshot =
-          await _collectionReference.doc(colorsGameId).get();
+      DocumentSnapshot documentSnapshot = await _collectionReference
+          .doc(_user?.uid)
+          .collection(_tablePlayers)
+          .doc()
+          .collection(_table)
+          .doc(colorsGameId)
+          .get();
 
       if (documentSnapshot.exists) {
         // El documento existe, devuelve un objeto Item creado a partir de los datos de Firestore
@@ -81,7 +114,12 @@ class ColorsGameService {
   }
 
   Future<void> clearData() async {
-    var snapshots = await _collectionReference.get();
+    var snapshots = await _collectionReference
+        .doc(_user?.uid)
+        .collection(_tablePlayers)
+        .doc()
+        .collection(_table)
+        .get();
     for (var doc in snapshots.docs) {
       await doc.reference.delete();
     }

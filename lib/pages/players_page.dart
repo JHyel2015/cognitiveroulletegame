@@ -1,5 +1,6 @@
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
+import 'package:cognitiveroulletegame/data/player_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/data/user_notifier.dart';
 import 'package:cognitiveroulletegame/models/player_data.dart';
@@ -27,7 +28,6 @@ class _PlayersPageState extends State<PlayersPage> {
   final playerAgeController = TextEditingController();
   final UserPreferences userPreferences = UserPreferences();
 
-  // List<Widget> players = [];
   List<PlayerData> players = [];
 
   @override
@@ -190,7 +190,8 @@ class _PlayersPageState extends State<PlayersPage> {
     );
   }
 
-  void addPlayer() {
+  void addPlayer() async {
+    final playerNotifier = Provider.of<PlayerNotifier>(context, listen: false);
     setState(() {});
     PlayerData newPlayerData = PlayerData(
       name: playerNameController.text,
@@ -200,13 +201,24 @@ class _PlayersPageState extends State<PlayersPage> {
     );
     String key = playerNameController.text;
 
-    // if (!players.any((item) => item.key.toString().contains(key))) {
     if (!players.any((item) => item.name.toString().contains(key))) {
-      players.add(newPlayerData);
+      await playerNotifier.addPlayer(newPlayerData);
       playerNameController.clear();
       snackbarService.showSnackbar("Jugador $key creado exitosamente",
           backgroundColor: kColorPrimary);
     }
+  }
+
+  void deletePlayer(String name) async {
+    final playerNotifier = Provider.of<PlayerNotifier>(context, listen: false);
+    final playerProgressNotifier =
+        Provider.of<PlayerProgressNotifier>(context, listen: false);
+    PlayerData playerData = await playerNotifier.getPlayerByName(name);
+    await playerNotifier.deletePlayer(playerData);
+    await playerProgressNotifier
+        .deletePlayerProgressByPlayerID(playerData.uid!);
+    snackbarService.showSnackbar("Jugador $playerData eliminado con éxito",
+        backgroundColor: kColorPrimary);
   }
 
   // Método para mostrar un diálogo de confirmación
@@ -300,9 +312,8 @@ class _PlayersPageState extends State<PlayersPage> {
               ),
               onPressed: () {
                 // Elimina el item y cierra el diálogo
-                setState(() {
-                  players.removeWhere((item) => item.name == key);
-                });
+                setState(() {});
+                deletePlayer(key);
                 Navigator.of(context).pop();
                 snackbarService.showSnackbar("Jugador $key eliminado");
               },
@@ -315,6 +326,10 @@ class _PlayersPageState extends State<PlayersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final playerNotifier = Provider.of<PlayerNotifier>(context);
+
+    players = playerNotifier.players;
+
     return Container(
       color: kColorSecondary,
       child: SafeArea(
@@ -350,9 +365,8 @@ class _PlayersPageState extends State<PlayersPage> {
                           },
                           onDismissed: (direction) {
                             // Elimina el item y cierra el diálogo
-                            setState(() {
-                              players.removeWhere((item) => item.name == key);
-                            });
+                            setState(() {});
+                            deletePlayer(item.name);
                             snackbarService
                                 .showSnackbar("Jugador $key eliminado");
                           },
@@ -400,6 +414,7 @@ class _PlayersPageState extends State<PlayersPage> {
                                 },
                               ),
                               onTap: () {
+                                playerNotifier.selectProfile(item);
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(

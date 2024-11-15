@@ -1,3 +1,5 @@
+import 'package:cognitiveroulletegame/data/player_notifier.dart';
+import 'package:cognitiveroulletegame/models/player_data.dart';
 import 'package:cognitiveroulletegame/pages/counter_game_page.dart';
 import 'package:cognitiveroulletegame/pages/roullete_game_page.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
@@ -9,6 +11,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:provider/provider.dart';
 
 class IntroGamePage extends StatefulWidget {
   int gameId;
@@ -31,6 +34,7 @@ class _IntroGamePageState extends State<IntroGamePage> {
   final UserPreferences userPreferences = UserPreferences();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
+  late PlayerData _player;
 
   // TtsState ttsState = TtsState.stopped;
 
@@ -75,6 +79,9 @@ class _IntroGamePageState extends State<IntroGamePage> {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
+    final playerNotifier = Provider.of<PlayerNotifier>(context);
+
+    _player = playerNotifier.player!;
 
     return Container(
       color: kColorSecondary,
@@ -88,7 +95,7 @@ class _IntroGamePageState extends State<IntroGamePage> {
             actions: [
               PopupMenuButton(
                 icon: CircleAvatar(
-                  child: Text('I'),
+                  child: Text(_player.name.substring(0, 1).toUpperCase()),
                 ),
                 itemBuilder: (context) {
                   return [
@@ -96,7 +103,7 @@ class _IntroGamePageState extends State<IntroGamePage> {
                       enabled: false,
                       child: Text(
                         _user != null
-                            ? _user!.displayName.toString()
+                            ? _player.name.toString()
                             : 'Usuario Invitado',
                       ),
                     ),

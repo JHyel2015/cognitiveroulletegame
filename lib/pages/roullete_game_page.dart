@@ -48,7 +48,7 @@ class RoulleteGamePage extends StatefulWidget {
 
 class _RoulleteGamePageState extends State<RoulleteGamePage>
     with SingleTickerProviderStateMixin {
-  Stopwatch _stopwatch = Stopwatch();
+  final Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
   int nElements = 6;
   final commentController = TextEditingController();
@@ -92,6 +92,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
 
   late AnimationController _animationController;
   late Animation<double> _animation;
+  late AnimationStatusListener _statusListener;
   double _currentAngle = pi / 6;
   double _angle = pi / 2;
   int _segments = 6;
@@ -296,6 +297,12 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     _time = userPreferences.time;
     int time = _time >= 60 ? 15 : _time;
 
+    _statusListener = (AnimationStatus status) {
+      if (status == AnimationStatus.completed) {
+        _showResult();
+      }
+    };
+
     _animationController = AnimationController(
       duration: Duration(seconds: time),
       vsync: this,
@@ -306,11 +313,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
         }
         setState(() {});
       })
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _showResult();
-        }
-      });
+      ..addStatusListener(_statusListener);
 
     _getFiles();
 
@@ -332,6 +335,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
             textureLoaded = true;
           }),
         );
+    addGameProgress();
   }
 
   @override
@@ -340,6 +344,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     _stopwatch.stop();
     _animationController.dispose();
     _controller.dispose();
+    commentController.dispose();
     super.dispose();
     _ledOnSubscription.cancel();
     _sensoresSubscription.cancel();
@@ -436,8 +441,6 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     final playerNotifier = Provider.of<PlayerNotifier>(context);
 
     _player = playerNotifier.player!;
-
-    addGameProgress();
 
     if (_images.isEmpty) {
       return Container(
@@ -623,6 +626,8 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   }
 
   void openBox() {
+    _animationController.removeStatusListener(_statusListener);
+    _stopAnimation();
     BuildContext dialogContext;
     showDialog(
       barrierDismissible: false,
@@ -754,7 +759,8 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     );
 
     PlayerProgress playerProgress = PlayerProgress(
-      userId: _player.uid!,
+      id: _playerProgressId,
+      userId: _playerProgressId == null ? '' : _player.uid!,
       gameId: widget.gameId,
       levelId: 0,
       score: _aciertos > 0 ? (_intentos / _aciertos).floor() : 0,
@@ -768,8 +774,12 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
       timestamp: DateTime.now(),
     );
 
-    _playerProgressId = await playerProgressNotifier
-        .addPlayerProgress(playerProgress) as String?;
+    if (_playerProgressId != null) {
+      await playerProgressNotifier.updatePlayerProgress(playerProgress);
+    } else {
+      _playerProgressId = await playerProgressNotifier
+          .addPlayerProgress(playerProgress) as String?;
+    }
   }
 
   void addColorsGame(String selectedColor, String correctColor, bool success) {

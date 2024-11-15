@@ -27,6 +27,7 @@ class ColorsGameNotifier extends ChangeNotifier {
     colorsGame.id = id;
     await _colorsGameDao.insert(colorsGame);
     colorsGame.synced = 1;
+    await _colorsGameService.updateData(colorsGame);
     await _colorsGameDao.updateColorsGame(colorsGame);
     _colorsGames = await _colorsGameDao.getAllColorsGames();
     notifyListeners();

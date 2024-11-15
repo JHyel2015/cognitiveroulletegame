@@ -7,7 +7,9 @@ import 'package:cognitiveroulletegame/models/player_data.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
+import 'package:cognitiveroulletegame/pages/settings_page.dart';
 import 'package:cognitiveroulletegame/services/snackbar_services.dart';
+import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -27,14 +29,34 @@ class _PlayersPageState extends State<PlayersPage> {
   final playerNameController = TextEditingController();
   final playerAgeController = TextEditingController();
   final UserPreferences userPreferences = UserPreferences();
+  final SpeakerService speakerService = SpeakerService();
 
   List<PlayerData> players = [];
+
+  String _textToSpeak =
+      'Hola, estás en la pantalla jugadores. Puedes crear varios perfiles de jugador con el boton agregar jugador';
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     _getCurrentUser();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _stop();
+  }
+
+  Future<void> _speak() async {
+    await speakerService.stop();
+    await speakerService.speak(_textToSpeak);
+  }
+
+  Future _stop() async {
+    await speakerService.stop();
+    // setState(() => ttsState = TtsState.stopped);
   }
 
   void _getCurrentUser() {
@@ -326,6 +348,8 @@ class _PlayersPageState extends State<PlayersPage> {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
     final playerNotifier = Provider.of<PlayerNotifier>(context);
 
     players = playerNotifier.players;
@@ -436,7 +460,7 @@ class _PlayersPageState extends State<PlayersPage> {
                         openBox();
                       },
                       label: Text(
-                        'Agregar usuario',
+                        'Agregar jugador',
                         style: TextStyle(color: kColorSecondary),
                       ),
                       icon: Icon(
@@ -444,25 +468,26 @@ class _PlayersPageState extends State<PlayersPage> {
                         color: kColorSecondary,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 5),
                     TextButton.icon(
                       style: TextButton.styleFrom(
                         backgroundColor: kColorPrimary,
                       ),
                       onPressed: () {
-                        Navigator.pushReplacement(
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const HomePage(),
+                            // builder: (context) => LevelsPage(),
+                            builder: (context) => SettingsPage(),
                           ),
                         );
                       },
                       label: Text(
-                        'Jugar',
+                        'Ajustes',
                         style: TextStyle(color: kColorSecondary),
                       ),
                       icon: Icon(
-                        Icons.play_arrow,
+                        Icons.settings,
                         color: kColorSecondary,
                       ),
                     ),
@@ -470,7 +495,7 @@ class _PlayersPageState extends State<PlayersPage> {
                 ),
               ),
               Positioned(
-                left: (MediaQuery.of(context).size.width / 2) - 75,
+                left: 10,
                 top: 10,
                 child: Image.asset(
                   'assets/EPN.png',
@@ -479,21 +504,26 @@ class _PlayersPageState extends State<PlayersPage> {
                 ),
               ),
               Positioned(
-                left: 10,
-                bottom: 10,
+                right: 10,
+                top: 10,
                 child: Image.asset(
-                  'assets/polhibou.png',
+                  'assets/FIS.png',
                   height: 150,
                   width: 150,
                 ),
               ),
               Positioned(
-                right: 10,
+                left: 10,
                 bottom: 10,
-                child: Image.asset(
-                  'assets/FIS.png',
-                  height: 150,
-                  width: 150,
+                child: InkWell(
+                  onTap: _speak,
+                  child: Hero(
+                    tag: 'robot',
+                    child: Image.asset(
+                      'assets/robot.gif',
+                      width: width * .40,
+                    ),
+                  ),
                 ),
               ),
             ],

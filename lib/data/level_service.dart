@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cognitiveroulletegame/models/level.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LevelService {
   static const _table = 'levels';

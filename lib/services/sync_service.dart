@@ -48,6 +48,8 @@ class SyncService {
         var firestoreItem =
             await levelService.getItemFromFirestore(level.id.toString());
 
+        level.synced = 1;
+
         if (firestoreItem != null) {
           // Actualizar el elemento en Firestore si ya existe y el timestamp es mayor
           if (level.timestamp.compareTo(firestoreItem.timestamp) == 1 &&
@@ -58,6 +60,8 @@ class SyncService {
           // Agregar el elemento a Firestore si no existe
           await levelService.addData(level);
         }
+
+        levelDao.updateLevel(level);
       }
 
       // sync from firestore to sqlite
@@ -75,7 +79,7 @@ class SyncService {
         // Verificar si el elemento ya existe en SQLite
         var localLevel = await levelDao.getLevelByID(itemId!);
 
-        localLevel.id = itemId;
+        firestoreLevel.id = itemId;
 
         if (localLevel != null) {
           // Actualizar el elemento en SQLite si ya existe
@@ -110,7 +114,8 @@ class SyncService {
         var firestoreItem = await playerProgressService
             .getItemFromFirestore(trnPlayerProgress.id.toString());
 
-        trnPlayerProgress.userId = userPreferences.storedUID;
+        trnPlayerProgress.synced = 1;
+
         if (firestoreItem != null) {
           // Actualizar el elemento en Firestore si ya existe
           if (trnPlayerProgress.timestamp.compareTo(firestoreItem.timestamp) ==
@@ -120,8 +125,12 @@ class SyncService {
           }
         } else {
           // Agregar el elemento a Firestore si no existe
-          await playerProgressService.addData(trnPlayerProgress);
+          String uid = await playerProgressService.addData(trnPlayerProgress);
+          trnPlayerProgress.id = uid;
+          await playerProgressService.updateData(trnPlayerProgress);
         }
+
+        playerProgressDao.updatePlayerProgress(trnPlayerProgress);
       }
 
       // sync from firestore to sqlite
@@ -140,7 +149,6 @@ class SyncService {
         // Verificar si el elemento ya existe en SQLite
         var localPlayerProgress =
             await playerProgressDao.getPlayerProgressByID(itemId);
-        firestorePlayerProgress.userId = userPreferences.storedUID;
         firestorePlayerProgress.id = itemId;
 
         if (localPlayerProgress != null) {
@@ -177,6 +185,8 @@ class SyncService {
         var firestoreItem =
             await gameService.getItemFromFirestore(game.id.toString());
 
+        game.synced = 1;
+
         if (firestoreItem != null) {
           // Actualizar el elemento en Firestore si ya existe
           if (game.timestamp.compareTo(firestoreItem.timestamp) == 1 &&
@@ -187,6 +197,8 @@ class SyncService {
           // Agregar el elemento a Firestore si no existe
           await gameService.addData(game);
         }
+
+        gameDao.updateGame(game);
       }
 
       // sync from firestore to sqlite
@@ -204,7 +216,7 @@ class SyncService {
         // Verificar si el elemento ya existe en SQLite
         var localGame = await gameDao.getGameByID(itemId!);
 
-        localGame?.id = itemId;
+        firestoreGame.id = itemId;
 
         if (localGame != null) {
           // Actualizar el elemento en SQLite si ya existe
@@ -235,9 +247,9 @@ class SyncService {
       for (ColorsGame colorsGame in localColorsGames) {
         // Verificar si el elemento ya existe en Firestore
         var firestoreItem = await colorsGameService
-            .getItemFromFirestore(colorsGame.gameId.toString());
+            .getItemFromFirestore(colorsGame.id.toString());
 
-        colorsGame.userId = userPreferences.storedUID;
+        colorsGame.synced = 1;
 
         if (firestoreItem != null) {
           // Actualizar el elemento en Firestore si ya existe
@@ -247,8 +259,12 @@ class SyncService {
           }
         } else {
           // Agregar el elemento a Firestore si no existe
-          await colorsGameService.addData(colorsGame);
+          String uid = await colorsGameService.addData(colorsGame);
+          colorsGame.id = uid;
+          await colorsGameService.updateData(colorsGame);
         }
+
+        colorsGameDao.updateColorsGame(colorsGame);
       }
 
       // sync from firestore to sqlite
@@ -267,7 +283,6 @@ class SyncService {
         // Verificar si el elemento ya existe en SQLite
         var localColorsGame = await colorsGameDao.getColorsGameByID(itemId);
 
-        firestoreColorsGame.userId = userPreferences.storedUID;
         firestoreColorsGame.id = itemId;
 
         if (localColorsGame != null) {
@@ -352,6 +367,8 @@ class SyncService {
         var firestoreItem =
             await playerService.getItemFromFirestore(player.uid.toString());
 
+        player.synced = 1;
+
         if (firestoreItem != null) {
           // Actualizar el elemento en Firestore si ya existe
           if (player.timestamp.compareTo(firestoreItem.timestamp) == 1 &&
@@ -360,8 +377,11 @@ class SyncService {
           }
         } else {
           // Agregar el elemento a Firestore si no existe
-          await playerService.addData(player);
+          String uid = await playerService.addData(player);
+          player.uid = uid;
+          await playerService.updateData(player);
         }
+        playerDao.updatePlayer(player);
       }
 
       // sync from firestore to sqlite
@@ -379,7 +399,7 @@ class SyncService {
 
         // Verificar si el elemento ya existe en SQLite
         var localPlayer = await playerDao.getPlayerByUID(itemId);
-        localPlayer.uid = itemId;
+        firestorePlayer.uid = itemId;
 
         if (localPlayer != null) {
           // Actualizar el elemento en SQLite si ya existe

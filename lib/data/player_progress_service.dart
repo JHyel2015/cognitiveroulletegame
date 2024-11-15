@@ -88,7 +88,6 @@ class PlayerProgressService {
       return await _collectionReference
           .doc(_user?.uid)
           .collection(_table)
-          .where("userId", isEqualTo: _user!.uid)
           .get();
     } catch (e) {
       rethrow;

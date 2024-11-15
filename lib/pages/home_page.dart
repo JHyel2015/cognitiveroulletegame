@@ -64,10 +64,6 @@ class _HomePageState extends State<HomePage> {
     init();
     _loadInitialValue();
     _getCurrentUser();
-    if (!_user!.isAnonymous) {
-      syncService.syncPlayerProgressData();
-      syncService.syncColorsGameData();
-    }
   }
 
   @override

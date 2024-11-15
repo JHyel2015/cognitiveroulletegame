@@ -18,14 +18,22 @@ class PlayerDao {
     return data.map((e) => PlayerData.fromJson(e)).toList();
   }
 
-  Future<PlayerData> getPlayerByUID(String uid) async {
+  Future<PlayerData?> getPlayerByUID(String uid) async {
     Database db = await dbHelper.database;
-    List<Map<String, dynamic>> data = await db.query(
-      _table,
-      where: 'uid = ?',
-      whereArgs: [uid],
-    );
-    return PlayerData.fromJson(data.first);
+    try {
+      List<Map<String, dynamic>> data = await db.query(
+        _table,
+        where: 'uid = ?',
+        whereArgs: [uid],
+      );
+      if (data.isNotEmpty) {
+        return PlayerData.fromJson(data.first);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<PlayerData> getPlayerByName(String name) async {

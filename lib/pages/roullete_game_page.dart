@@ -153,7 +153,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     await _sensoresRef.keepSynced(true);
     await _levelRef.keepSynced(true);
 
-    _levelRef.set(1);
+    _levelRef.set(widget.gameId);
 
     try {
       final counterSnapshot = await _ledOnRef.get();

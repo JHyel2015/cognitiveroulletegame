@@ -33,7 +33,7 @@ class PlayerProgress {
 
   factory PlayerProgress.fromJson(Map<String, dynamic> json) {
     return PlayerProgress(
-      id: json['id'] as String,
+      id: json['id'] as String?,
       userId: json['userId'] as String,
       gameId: json['gameId'] as int,
       levelId: json['levelId'] as int,

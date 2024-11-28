@@ -48,6 +48,11 @@ class PlayerProgressNotifier extends ChangeNotifier {
     return _playerProgresss;
   }
 
+  // get playerProgresss list
+  List<PlayerProgress> getPlayerProgresssByPlayer(String playerId) {
+    return _playerProgresss.where((item) => item.userId == playerId).toList();
+  }
+
   // delete playerProgress
   Future<void> deletePlayerProgressItem(PlayerProgress playerProgress) async {
     await _playerProgressDao.deletePlayerProgress(playerProgress.id!);

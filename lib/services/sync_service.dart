@@ -143,8 +143,9 @@ class SyncService {
       for (QueryDocumentSnapshot firestoreDoc
           in firestorePlayerProgressSnapshot.docs) {
         var itemId = firestoreDoc.id;
-        var firestorePlayerProgress = PlayerProgress.fromJson(
-            firestoreDoc.data() as Map<String, dynamic>);
+        var json = firestoreDoc.data() as Map<String, dynamic>;
+        // json['id'] = itemId;
+        var firestorePlayerProgress = PlayerProgress.fromJson(json);
 
         // Verificar si el elemento ya existe en SQLite
         var localPlayerProgress =
@@ -165,6 +166,7 @@ class SyncService {
           // Agregar el elemento a SQLite si no existe
           await playerProgressDao.insert(firestorePlayerProgress);
         }
+        await playerProgressService.updateData(firestorePlayerProgress);
       }
 
       // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.

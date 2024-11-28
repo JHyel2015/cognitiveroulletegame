@@ -7,8 +7,10 @@ import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/data/user_notifier.dart';
+import 'package:cognitiveroulletegame/models/player_data.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
+import 'package:cognitiveroulletegame/pages/historial_page.dart';
 import 'package:cognitiveroulletegame/pages/players_page.dart';
 import 'package:cognitiveroulletegame/pages/settings_page.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
@@ -44,6 +46,7 @@ class _HomePageState extends State<HomePage> {
   final SpeakerService speakerService = SpeakerService();
   late DatabaseReference _ledOnRef;
   User? _user;
+  late PlayerData _player;
 
   bool _ledOn = false;
 
@@ -177,8 +180,9 @@ class _HomePageState extends State<HomePage> {
     double height = MediaQuery.of(context).size.height;
     final playerNotifier = Provider.of<PlayerNotifier>(context);
 
-    _textToSpeak =
-        _textToSpeak.replaceAll('playerName', playerNotifier.player!.name);
+    _player = playerNotifier.player!;
+
+    _textToSpeak = _textToSpeak.replaceAll('playerName', _player.name);
 
     _userPreferences.isAnonymous = _user != null ? _user!.isAnonymous : false;
 
@@ -221,7 +225,7 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Hola ${playerNotifier.player!.name}',
+                      'Hola ${_player.name}',
                       style: TextStyle(
                         fontSize: 30,
                       ),
@@ -268,25 +272,12 @@ class _HomePageState extends State<HomePage> {
                           context,
                           MaterialPageRoute(
                             // builder: (context) => LevelsPage(),
-                            builder: (context) => SettingsPage(),
+                            builder: (context) => HistorialPage(
+                              playerName: _player.name,
+                            ),
                           ),
                         );
                       },
-                      label: Text(
-                        'Ajustes',
-                        style: TextStyle(color: kColorSecondary),
-                      ),
-                      icon: Icon(
-                        Icons.settings,
-                        color: kColorSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        backgroundColor: kColorPrimary,
-                      ),
-                      onPressed: () {},
                       label: Text(
                         'Historial',
                         style: TextStyle(color: kColorSecondary),

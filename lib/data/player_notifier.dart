@@ -38,6 +38,15 @@ class PlayerNotifier extends ChangeNotifier {
     return await _playerDao.getPlayerByName(name);
   }
 
+  Future<PlayerData> getPlayerByUID(String uid) async {
+    return _players.where((item) => item.uid == uid).first;
+  }
+
+  // get playerProgresss list
+  List<PlayerData> getPlayer() {
+    return _players;
+  }
+
   Future<void> addPlayer(PlayerData player) async {
     String id = await _playerService.addData(player);
     player.uid = id;

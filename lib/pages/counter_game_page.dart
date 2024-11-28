@@ -163,7 +163,7 @@ class _CounterGamePageState extends State<CounterGamePage>
     await _counterRef.keepSynced(true);
     await _levelRef.keepSynced(true);
 
-    _levelRef.set(2);
+    _levelRef.set(widget.gameId);
 
     try {
       final counterSnapshot = await _ledOnRef.get();

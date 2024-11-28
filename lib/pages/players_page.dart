@@ -6,6 +6,7 @@ import 'package:cognitiveroulletegame/data/user_notifier.dart';
 import 'package:cognitiveroulletegame/models/player_data.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
+import 'package:cognitiveroulletegame/pages/historial_page.dart';
 import 'package:cognitiveroulletegame/pages/home_page.dart';
 import 'package:cognitiveroulletegame/pages/settings_page.dart';
 import 'package:cognitiveroulletegame/services/snackbar_services.dart';
@@ -488,6 +489,31 @@ class _PlayersPageState extends State<PlayersPage> {
                       ),
                       icon: Icon(
                         Icons.settings,
+                        color: kColorSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        backgroundColor: kColorPrimary,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            // builder: (context) => LevelsPage(),
+                            builder: (context) => HistorialPage(
+                              playerName: '',
+                            ),
+                          ),
+                        );
+                      },
+                      label: Text(
+                        'Historial',
+                        style: TextStyle(color: kColorSecondary),
+                      ),
+                      icon: Icon(
+                        Icons.list,
                         color: kColorSecondary,
                       ),
                     ),

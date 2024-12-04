@@ -191,7 +191,7 @@ class _HomePageState extends State<HomePage> {
       child: SafeArea(
         child: Scaffold(
           appBar: AppBar(
-            automaticallyImplyLeading: false,
+            // automaticallyImplyLeading: false,
             backgroundColor: Colors.transparent,
             elevation: 0,
             actions: [

@@ -18,13 +18,13 @@ class ColorsGameDao {
     return data.map((e) => ColorsGame.fromJson(e)).toList();
   }
 
-  Future<ColorsGame?> getColorsGameByID(String gameId) async {
+  Future<ColorsGame?> getColorsGameByID(String id) async {
     Database db = await dbHelper.database;
     try {
       List<Map<String, dynamic>> data = await db.query(
         _table,
-        where: 'gameId = ?',
-        whereArgs: [gameId],
+        where: 'id = ?',
+        whereArgs: [id],
       );
       if (data.isNotEmpty) {
         return ColorsGame.fromJson(data.first);

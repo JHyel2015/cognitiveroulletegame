@@ -63,6 +63,26 @@ class ColorsGameService {
     }
   }
 
+  Future<void> deleteDataByPlayerUID(String playerUID) async {
+    _user = _auth.currentUser;
+    if (_user != null && !_user!.isAnonymous) {
+      QuerySnapshot querySnapshot = await _collectionReference
+          .doc(_user?.uid)
+          .collection(_tablePlayers)
+          .doc(playerUID)
+          .collection(_table)
+          .get();
+
+      // Recorre los documentos y elimínalos uno por uno
+      for (QueryDocumentSnapshot doc in querySnapshot.docs) {
+        await doc.reference.delete();
+      }
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      print('Usuario invitado, no puede guardar datos');
+    }
+  }
+
   Stream<List<ColorsGame>> getFirestoreData() {
     return _collectionReference
         .doc(_user?.uid)
@@ -74,14 +94,23 @@ class ColorsGameService {
             snapshot.docs.map((docs) => ColorsGame.fromQuery(docs)).toList());
   }
 
-  Future<QuerySnapshot> getAllItemsFromFirestore() async {
+  Future<List<QueryDocumentSnapshot>> getAllItemsFromFirestore() async {
+    _user = _auth.currentUser;
+    List<QueryDocumentSnapshot> querySnapshot = [];
     try {
-      return await _collectionReference
+      final playersSnapshot = await _collectionReference
           .doc(_user?.uid)
           .collection(_tablePlayers)
-          .doc()
-          .collection(_table)
           .get();
+
+      // Recorre cada jugador y obtiene la subcolección _table
+      for (var playerDoc in playersSnapshot.docs) {
+        final tableSnapshot =
+            await playerDoc.reference.collection(_table).get();
+
+        querySnapshot.addAll(tableSnapshot.docs);
+      }
+      return querySnapshot;
     } catch (e) {
       rethrow;
     }

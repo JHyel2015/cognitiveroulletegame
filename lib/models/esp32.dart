@@ -78,3 +78,23 @@ class Sensores {
         "valorEnvioBoton": valorEnvioBoton,
       };
 }
+
+class ColorQueJuega {
+  String color;
+  int led;
+
+  ColorQueJuega({
+    this.color = 'Violeta',
+    this.led = 5,
+  });
+
+  factory ColorQueJuega.fromJson(Map<String, dynamic> json) => ColorQueJuega(
+        color: json['color'],
+        led: json['led'],
+      );
+
+  Map<String, dynamic> toJson() => {
+        'color': color,
+        'led': led,
+      };
+}

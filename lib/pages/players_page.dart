@@ -227,6 +227,7 @@ class _PlayersPageState extends State<PlayersPage> {
     if (!players.any((item) => item.name.toString().contains(key))) {
       await playerNotifier.addPlayer(newPlayerData);
       playerNameController.clear();
+      playerAgeController.clear();
       snackbarService.showSnackbar("Jugador $key creado exitosamente",
           backgroundColor: kColorPrimary);
     }
@@ -234,9 +235,12 @@ class _PlayersPageState extends State<PlayersPage> {
 
   void deletePlayer(String name) async {
     final playerNotifier = Provider.of<PlayerNotifier>(context, listen: false);
+    final colorsGameNotifier =
+        Provider.of<ColorsGameNotifier>(context, listen: false);
     final playerProgressNotifier =
         Provider.of<PlayerProgressNotifier>(context, listen: false);
     PlayerData playerData = await playerNotifier.getPlayerByName(name);
+    await colorsGameNotifier.deleteColorsGameByPlayerId(playerData.uid!);
     await playerNotifier.deletePlayer(playerData);
     await playerProgressNotifier
         .deletePlayerProgressByPlayerID(playerData.uid!);
@@ -440,7 +444,7 @@ class _PlayersPageState extends State<PlayersPage> {
                               ),
                               onTap: () {
                                 playerNotifier.selectProfile(item);
-                                Navigator.pushReplacement(
+                                Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => const HomePage(),

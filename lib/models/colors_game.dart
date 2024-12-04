@@ -59,7 +59,7 @@ class ColorsGame {
       userId: doc['userId'] as String,
       selectedColor: doc['selectedColor'] as String,
       correctColor: doc['correctColor'] as String,
-      success: ((int.tryParse(doc['success'].toString()) ?? 1)).isOdd,
+      success: doc['success'],
       synced: doc['synced'],
       timestamp: DateTime.parse(doc['timestamp']),
     );

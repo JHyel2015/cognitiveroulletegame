@@ -272,15 +272,13 @@ class SyncService {
       // sync from firestore to sqlite
 
       // Obtener datos de Firestore
-      QuerySnapshot firestoreColorsGamesSnapshot =
+      var firestoreColorsGamesSnapshot =
           await colorsGameService.getAllItemsFromFirestore();
 
       // Sincronizar con SQLite
-      for (QueryDocumentSnapshot firestoreDoc
-          in firestoreColorsGamesSnapshot.docs) {
+      for (QueryDocumentSnapshot firestoreDoc in firestoreColorsGamesSnapshot) {
         var itemId = firestoreDoc.id;
-        var firestoreColorsGame =
-            ColorsGame.fromJson(firestoreDoc.data() as Map<String, dynamic>);
+        var firestoreColorsGame = ColorsGame.fromQuery(firestoreDoc);
 
         // Verificar si el elemento ya existe en SQLite
         var localColorsGame = await colorsGameDao.getColorsGameByID(itemId);
@@ -289,11 +287,12 @@ class SyncService {
 
         if (localColorsGame != null) {
           // Actualizar el elemento en SQLite si ya existe
-          if (firestoreColorsGame.timestamp
-                      .compareTo(localColorsGame.timestamp) ==
-                  1 &&
-              firestoreColorsGame.timestamp
-                  .isAfter(localColorsGame.timestamp)) {
+          if ((firestoreColorsGame.timestamp
+                          .compareTo(localColorsGame.timestamp) ==
+                      1 &&
+                  firestoreColorsGame.timestamp
+                      .isAfter(localColorsGame.timestamp) ||
+              firestoreColorsGame.success != localColorsGame.success)) {
             await colorsGameDao.updateColorsGame(firestoreColorsGame);
           }
         } else {

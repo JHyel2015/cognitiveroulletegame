@@ -63,6 +63,7 @@ class _CounterGamePageState extends State<CounterGamePage>
   late PlayerData _player;
   final SpeakerService speakerService = SpeakerService();
 
+  bool _exited = false;
   bool _ledOn = false;
   int _counter = 0;
   int _valorEnvio = 0;
@@ -72,11 +73,10 @@ class _CounterGamePageState extends State<CounterGamePage>
   late FirebaseApp _secondaryApp;
   late FirebaseDatabase _databaseReference;
   late StreamSubscription<DatabaseEvent> _ledOnSubscription;
-  late StreamSubscription<DatabaseEvent> _sensoresSubscription;
   late StreamSubscription<DatabaseEvent> _counterSubscription;
   late DatabaseReference _ledOnRef;
-  late DatabaseReference _sensoresRef;
   late DatabaseReference _levelRef;
+  late DatabaseReference _aciertoRef;
   late DatabaseReference _counterRef;
 
   int isTappedOut = 0;
@@ -149,19 +149,18 @@ class _CounterGamePageState extends State<CounterGamePage>
       databaseURL: 'https://esp32colores-default-rtdb.firebaseio.com',
     );
 
-    _ledOnRef = _databaseReference.ref('EstadoLED');
-    _sensoresRef = _databaseReference.ref('esp32DataBase/Sensores');
-    _levelRef = _databaseReference.ref('esp32DataBase/Sensores/nivel');
-    _counterRef =
-        _databaseReference.ref('esp32DataBase/Sensores/vecesPrendido');
+    _ledOnRef = _databaseReference.ref(kFirebaseLEDStatus);
+    _levelRef = _databaseReference.ref(kFirebaseLevel);
+    _aciertoRef = _databaseReference.ref(kFirebaseAcierto);
+    _counterRef = _databaseReference.ref(kFirebaseCount);
 
     _databaseReference.setPersistenceEnabled(true);
     _databaseReference.setPersistenceCacheSizeBytes(10000000);
 
     await _ledOnRef.keepSynced(true);
-    await _sensoresRef.keepSynced(true);
     await _counterRef.keepSynced(true);
     await _levelRef.keepSynced(true);
+    await _aciertoRef.keepSynced(true);
 
     _levelRef.set(widget.gameId);
 
@@ -185,51 +184,6 @@ class _CounterGamePageState extends State<CounterGamePage>
       },
     );
 
-    _sensoresSubscription = _sensoresRef.onValue.listen(
-      (DatabaseEvent event) async {
-        if (_ledOn) {
-          setState(() {
-            print('1 ${event.snapshot.value}');
-            final value = Map<String, dynamic>.from(
-                event.snapshot.value as Map<Object?, Object?>);
-            _sensores = (Sensores.fromJson(value));
-            _angle = 0;
-            switch (_sensores.indiceColorEncendido) {
-              case 0:
-                _angle = pi / 6;
-              case 1:
-                _angle = pi / 2;
-              case 2:
-                _angle = pi - pi / 6;
-              case 3:
-                _angle = pi + pi / 6;
-              case 4:
-                _angle = 3 * pi / 2;
-              case 5:
-                _angle = 2 * pi - pi / 6;
-              default:
-                _angle = 3 * pi / 2;
-            }
-            _currentAngle = _angle;
-            print('3 ${_sensores.toJson().toString()}');
-          });
-          await _sensoresRef.update({"puntaje": 0});
-
-          if (_sensores.valorEnvioBoton == 1) {
-            _valorEnvio = _sensores.valorEnvioBoton;
-            if (_animationController.isAnimating) {
-              _stopAnimation();
-            } else {
-              _fallos++;
-              _intentos++;
-              _spinAnimation();
-            }
-            await _sensoresRef.update({"valorEnvioBoton": 0});
-          }
-        }
-      },
-    );
-
     _counterSubscription = _counterRef.onValue.listen(
       (DatabaseEvent event) async {
         setState(() {
@@ -240,7 +194,6 @@ class _CounterGamePageState extends State<CounterGamePage>
             _speak('Escoge entre las cartas el número que contaste');
           }
         });
-        await _counterRef.set(0);
       },
     );
   }
@@ -340,16 +293,18 @@ class _CounterGamePageState extends State<CounterGamePage>
     addGameProgress();
     _speak(widget.textToSpeak);
     _stopwatch.start();
-    Future.delayed(Duration(seconds: _time), () {
-      _animationController.stop();
-      _animationController2.stop();
-      print('Se cumplio el tiempo');
-      if (_isWakelockEnabled) {
-        WakelockPlus.disable();
-      }
-      _isWakelockEnabled = false;
-      openBox();
-    });
+    if (_exited) {
+      Future.delayed(Duration(seconds: _time), () {
+        _animationController.stop();
+        _animationController2.stop();
+        print('Se cumplio el tiempo');
+        if (_isWakelockEnabled) {
+          WakelockPlus.disable();
+        }
+        _isWakelockEnabled = false;
+        openBox();
+      });
+    }
   }
 
   @override
@@ -361,7 +316,6 @@ class _CounterGamePageState extends State<CounterGamePage>
     _animationController2.dispose();
     super.dispose();
     _ledOnSubscription.cancel();
-    _sensoresSubscription.cancel();
     _counterSubscription.cancel();
     WakelockPlus.disable();
     _isWakelockEnabled = false;
@@ -380,12 +334,6 @@ class _CounterGamePageState extends State<CounterGamePage>
     if (_ledOn) {
       print(
           'entra primera vez ${_colorList[number].substring(0, 1).toUpperCase()}${_colorList[number].substring(1).toLowerCase()}');
-      await _sensoresRef.update(
-        {
-          "color_que_juega":
-              '${_colorList[number].substring(0, 1).toUpperCase()}${_colorList[number].substring(1).toLowerCase()}'
-        },
-      );
     }
     setState(() {
       _randomNum = number;
@@ -411,16 +359,19 @@ class _CounterGamePageState extends State<CounterGamePage>
 
     if (_randomNum == _segmentIndex) {
       _aciertos++;
-      await _sensoresRef.update({"puntaje": _aciertos});
+      await _aciertoRef.set(_aciertos);
     } else {
       _fallos++;
     }
-    Future.delayed(const Duration(seconds: 2), () {
-      stopAnimation = false;
-      _animationController2.forward(from: 0);
-      cardNumbers = [-1, -1, -1];
-      _visible = false;
-    });
+    await _counterRef.set(0);
+    if (_exited) {
+      Future.delayed(const Duration(seconds: 2), () {
+        stopAnimation = false;
+        _animationController2.forward(from: 0);
+        cardNumbers = [-1, -1, -1];
+        _visible = false;
+      });
+    }
   }
 
   @override
@@ -575,10 +526,6 @@ class _CounterGamePageState extends State<CounterGamePage>
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: stopAndGenerateNumbers,
-            child: Icon(Icons.stop),
-          ),
         ),
       ),
     );
@@ -627,6 +574,7 @@ class _CounterGamePageState extends State<CounterGamePage>
 
   void openBox() {
     BuildContext dialogContext;
+    _exited = true;
     showDialog(
       barrierDismissible: false,
       context: context,

@@ -48,10 +48,28 @@ class ColorsGameNotifier extends ChangeNotifier {
     return _colorsGames;
   }
 
+  // get colorsGames list
+  List<ColorsGame> getColorsGameByPlayerProgresss(
+      String playerId, String playerProgressId) {
+    return _colorsGames
+        .where((item) =>
+            item.userId == playerId &&
+            item.playerProgressId == playerProgressId)
+        .toList();
+  }
+
   // delete colorsGame
   void deleteColorsGameItem(ColorsGame colorsGame) async {
     await _colorsGameDao.deleteColorsGame(colorsGame.id!);
     await _colorsGameService.deleteData(colorsGame);
+    _colorsGames = await _colorsGameDao.getAllColorsGames();
+    notifyListeners();
+  }
+
+  // delete colorsGame
+  Future<void> deleteColorsGameByPlayerId(String playerId) async {
+    await _colorsGameDao.deleteColorsGameByPlayerID(playerId);
+    await _colorsGameService.deleteDataByPlayerUID(playerId);
     _colorsGames = await _colorsGameDao.getAllColorsGames();
     notifyListeners();
   }

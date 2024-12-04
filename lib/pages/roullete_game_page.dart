@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_notifier.dart';
@@ -49,6 +50,7 @@ class RoulleteGamePage extends StatefulWidget {
 class _RoulleteGamePageState extends State<RoulleteGamePage>
     with SingleTickerProviderStateMixin {
   final Stopwatch _stopwatch = Stopwatch();
+  final AudioPlayer _audioPlayer = AudioPlayer();
   Timer? _timer;
   int nElements = 6;
   final commentController = TextEditingController();
@@ -61,16 +63,23 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   late PlayerData _player;
   final SpeakerService speakerService = SpeakerService();
 
+  bool _exited = false;
   bool _ledOn = false;
   int _valorEnvio = 0;
-  Sensores _sensores = Sensores();
+  int _indiceRuleta = 0;
+  // Sensores _sensores = Sensores();
+  ColorQueJuega _colorQueJuega = ColorQueJuega();
   // final FirebaseDatabase _databaseReference = FirebaseDatabase.instance;
   late FirebaseApp _secondaryApp;
   late FirebaseDatabase _databaseReference;
   late StreamSubscription<DatabaseEvent> _ledOnSubscription;
   late StreamSubscription<DatabaseEvent> _sensoresSubscription;
+  late StreamSubscription<DatabaseEvent> _botonSubscription;
   late DatabaseReference _ledOnRef;
   late DatabaseReference _sensoresRef;
+  late DatabaseReference _indiceRuletaRef;
+  late DatabaseReference _botonRef;
+  late DatabaseReference _aciertoRef;
   late DatabaseReference _levelRef;
 
   int isTappedOut = 0;
@@ -111,6 +120,15 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     'yellow',
   ];
 
+  final Map<String, String> _spanishColors = {
+    'blue': 'azul',
+    'purple': 'violeta',
+    'orange': 'naranja',
+    'green': 'verde',
+    'red': 'rojo',
+    'yellow': 'amarillo',
+  };
+
   final List<Color> _colors = [
     Colors.blue,
     Colors.purple,
@@ -118,6 +136,15 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     Colors.green,
     Colors.red,
     Colors.yellow,
+  ];
+
+  final List<double> _angles = [
+    (pi / 6) - (2 * pi / 3),
+    (pi / 2) - (2 * pi / 3),
+    (pi - pi / 6) - (2 * pi / 3),
+    (pi + pi / 6) - (2 * pi / 3),
+    (3 * pi / 2) - (2 * pi / 3),
+    (2 * pi - pi / 6) - (2 * pi / 3),
   ];
 
   List<String> _imagePaths = [];
@@ -142,15 +169,21 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
       databaseURL: 'https://esp32colores-default-rtdb.firebaseio.com',
     );
 
-    _ledOnRef = _databaseReference.ref('EstadoLED');
-    _sensoresRef = _databaseReference.ref('esp32DataBase/Sensores');
-    _levelRef = _databaseReference.ref('esp32DataBase/Sensores/nivel');
+    _ledOnRef = _databaseReference.ref(kFirebaseLEDStatus);
+    _sensoresRef = _databaseReference.ref(kFirebaseSensores);
+    _indiceRuletaRef = _databaseReference.ref(kFirebaseIndiceRuleta);
+    _botonRef = _databaseReference.ref(kFirebaseBoton);
+    _aciertoRef = _databaseReference.ref(kFirebaseAcierto);
+    _levelRef = _databaseReference.ref(kFirebaseLevel);
 
     _databaseReference.setPersistenceEnabled(true);
     _databaseReference.setPersistenceCacheSizeBytes(10000000);
 
     await _ledOnRef.keepSynced(true);
     await _sensoresRef.keepSynced(true);
+    await _indiceRuletaRef.keepSynced(true);
+    await _botonRef.keepSynced(true);
+    await _aciertoRef.keepSynced(true);
     await _levelRef.keepSynced(true);
 
     _levelRef.set(widget.gameId);
@@ -175,55 +208,53 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
       },
     );
 
-    _sensoresSubscription = _sensoresRef.onValue.listen(
+    _botonSubscription = _botonRef.onValue.listen(
+      (DatabaseEvent event) async {
+        _valorEnvio = (event.snapshot.value ?? 0) as int;
+        if (_valorEnvio == 1) {
+          if (_animationController.isAnimating) {
+            _stopAnimation();
+          } else {
+            _fallos++;
+            _intentos++;
+            _spinAnimation();
+          }
+          await _botonRef.set(0);
+        }
+        setState(() {
+          print(event.snapshot.value);
+        });
+      },
+    );
+
+    _sensoresSubscription = _indiceRuletaRef.onValue.listen(
       (DatabaseEvent event) async {
         if (_ledOn) {
           setState(() {
-            print('1 ${event.snapshot.value}');
-            final value = Map<String, dynamic>.from(
-                event.snapshot.value as Map<Object?, Object?>);
-            _sensores = (Sensores.fromJson(value));
+            _indiceRuleta = (event.snapshot.value ?? 0) as int;
             _angle = 0;
-            switch (_sensores.indiceColorEncendido) {
-              case 0:
-                _angle = pi / 6;
-              case 1:
-                _angle = pi / 2;
-              case 2:
-                _angle = pi - pi / 6;
-              case 3:
-                _angle = pi + pi / 6;
-              case 4:
-                _angle = 3 * pi / 2;
-              case 5:
-                _angle = 2 * pi - pi / 6;
-              default:
-                _angle = 3 * pi / 2;
-            }
+            _angle = _angles[_indiceRuleta];
             _currentAngle = _angle;
-            print('3 ${_sensores.toJson().toString()}');
+            print('3 ${_colorQueJuega.toJson().toString()}');
           });
-          await _sensoresRef.update({"puntaje": 0});
-
-          if (_sensores.valorEnvioBoton == 1) {
-            _valorEnvio = _sensores.valorEnvioBoton;
-            if (_animationController.isAnimating) {
-              _stopAnimation();
-            } else {
-              _fallos++;
-              _intentos++;
-              _spinAnimation();
-            }
-            await _sensoresRef.update({"valorEnvioBoton": 0});
-          }
+          await _aciertoRef.set(0);
         }
       },
     );
   }
 
-  Future<void> _speak() async {
+  Future<void> _playSound(String assetPath) async {
+    try {
+      await _audioPlayer.play(AssetSource(assetPath));
+    } catch (e) {
+      print('Error al reproducir el sonido: $e');
+    }
+  }
+
+  Future<void> _speak({String textToSpeak = ''}) async {
+    if (textToSpeak == '') textToSpeak = widget.textToSpeak;
     await speakerService.stop();
-    await speakerService.speak(widget.textToSpeak);
+    await speakerService.speak(textToSpeak);
   }
 
   Future _stop() async {
@@ -251,17 +282,18 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
 
     setState(() {});
     _animationController.forward(from: 0);
-    _speak();
     _stopwatch.start();
-    Future.delayed(Duration(seconds: _time), () {
-      _animationController.stop();
-      print('Se cumplio el tiempo');
-      if (_isWakelockEnabled) {
-        WakelockPlus.disable();
-      }
-      _isWakelockEnabled = false;
-      openBox();
-    });
+    if (_exited) {
+      Future.delayed(Duration(seconds: _time), () {
+        _animationController.stop();
+        print('Se cumplio el tiempo');
+        if (_isWakelockEnabled) {
+          WakelockPlus.disable();
+        }
+        _isWakelockEnabled = false;
+        openBox();
+      });
+    }
   }
 
   List<T> getRandomElements<T>(List<T> list, int n) {
@@ -288,6 +320,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   @override
   void initState() {
     super.initState();
+    _speak();
     _ledOn = userPreferences.isLedOn;
     init();
 
@@ -348,26 +381,34 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     super.dispose();
     _ledOnSubscription.cancel();
     _sensoresSubscription.cancel();
+    _botonSubscription.cancel();
     WakelockPlus.disable();
     _isWakelockEnabled = false;
   }
 
   void getRandomInt() async {
     final random = Random();
-    int number = random.nextInt(_segments);
+    int number = -1;
+    do {
+      number = random.nextInt(_segments);
+    } while (_randomNum == number);
     if (_ledOn) {
       print(
           'entra primera vez ${_colorList[number].substring(0, 1).toUpperCase()}${_colorList[number].substring(1).toLowerCase()}');
       await _sensoresRef.update(
         {
-          "color_que_juega":
-              '${_colorList[number].substring(0, 1).toUpperCase()}${_colorList[number].substring(1).toLowerCase()}'
+          "color":
+              '${_colorList[number].substring(0, 1).toUpperCase()}${_colorList[number].substring(1).toLowerCase()}',
+          "led": '$number',
         },
       );
     }
     setState(() {
       _randomNum = number;
     });
+    _speak(
+        textToSpeak:
+            'Color que juega: ${_spanishColors[_colorList[_randomNum]]!}');
   }
 
   void _spinAnimation() {
@@ -383,7 +424,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   }
 
   void _showResult() async {
-    final double normalizedAngle = (_currentAngle % (2 * pi));
+    final double normalizedAngle = ((_currentAngle + (2 * pi / 3)) % (2 * pi));
     final double segmentAngle = (2 * pi / _segments);
     _segmentIndex =
         (_segments + (normalizedAngle / segmentAngle).floor()) % _segments;
@@ -394,18 +435,22 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
 
     if (_randomNum == _segmentIndex) {
       _aciertos++;
-      await _sensoresRef.update({"puntaje": _aciertos});
+      await _aciertoRef.set(_aciertos);
+      await _playSound('sounds/success.mp3');
     } else {
+      // await _playSound('sounds/fail.mp3');
       _fallos++;
     }
     addColorsGame(_colorList[_randomNum], _colorList[_segmentIndex],
         _randomNum == _segmentIndex);
-    Future.delayed(const Duration(seconds: 2), () {
-      _animationController.forward(from: 0);
-      getRandomInt();
-      randomElements();
-      _visible = false;
-    });
+    if (!_exited) {
+      Future.delayed(const Duration(seconds: 2), () {
+        _animationController.forward(from: 0);
+        getRandomInt();
+        randomElements();
+        _visible = false;
+      });
+    }
   }
 
   List<Widget> _buildPositionedImages() {
@@ -416,7 +461,8 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     const double radius = 120; // radius of the circle
 
     for (int i = 0; i < imageCount; i++) {
-      final double angle = ((2 * pi * i) / imageCount) + (pi / 6);
+      final double angle =
+          ((2 * pi * i) / imageCount) + (pi / 6) - (2 * pi / 3);
       final double x = centerX + radius * cos(angle);
       final double y = centerY + radius * sin(angle);
 
@@ -563,7 +609,8 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
                               children: [
                                 CustomPaint(
                                   size: Size(350, 350),
-                                  painter: RuletaPainter(0.0, 6, _colors, []),
+                                  painter: RuletaPainter(
+                                      0.0 - (2 * pi / 3), 6, _colors, []),
                                 ),
                                 ..._buildPositionedImages(),
                                 Transform.rotate(
@@ -627,6 +674,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
 
   void openBox() {
     _animationController.removeStatusListener(_statusListener);
+    _exited = true;
     _stopAnimation();
     BuildContext dialogContext;
     showDialog(

@@ -41,7 +41,7 @@ class RuletaPainter extends CustomPainter {
       );
 
       final textSpan = TextSpan(
-        text: (i + 1).toString(),
+        text: '',
         style: const TextStyle(
           color: Colors.black,
           fontSize: 14,

@@ -37,7 +37,7 @@ class ColorsGame {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool isSqlLite = false}) {
     return <String, dynamic>{
       'id': id,
       'playerProgressId': playerProgressId,
@@ -45,7 +45,7 @@ class ColorsGame {
       'userId': userId,
       'selectedColor': selectedColor,
       'correctColor': correctColor,
-      'success': success,
+      'success': isSqlLite ? (success ? 1 : 0) : success,
       'synced': synced,
       "timestamp": timestamp.toString(),
     };

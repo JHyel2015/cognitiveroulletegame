@@ -8,7 +8,7 @@ class ColorsGameDao {
 
   Future<int> insert(ColorsGame colorsGame) async {
     Database db = await dbHelper.database;
-    return await db.insert(_table, colorsGame.toJson(),
+    return await db.insert(_table, colorsGame.toJson(isSqlLite: true),
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -40,7 +40,7 @@ class ColorsGameDao {
     Database db = await dbHelper.database;
     return await db.update(
       _table,
-      colorsGame.toJson(),
+      colorsGame.toJson(isSqlLite: true),
       where: 'id = ?',
       whereArgs: [colorsGame.id],
     );

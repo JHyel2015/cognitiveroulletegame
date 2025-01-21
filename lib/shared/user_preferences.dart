@@ -70,4 +70,10 @@ class UserPreferences {
   set storedUID(String value) {
     _preferences.setString('anonymousUID', value);
   }
+
+  String get playerName => _preferences.getString('playerName') ?? 'playerName';
+
+  set playerName(String value) {
+    _preferences.setString('playerName', value);
+  }
 }

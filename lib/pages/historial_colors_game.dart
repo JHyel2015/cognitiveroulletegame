@@ -1,16 +1,13 @@
 import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
 import 'package:cognitiveroulletegame/data/game_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_notifier.dart';
-import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/models/colors_game.dart';
 import 'package:cognitiveroulletegame/models/game.dart';
 import 'package:cognitiveroulletegame/models/player_data.dart';
-import 'package:cognitiveroulletegame/models/player_progress.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/services/sync_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -31,7 +28,6 @@ class HistorialColorsGamePage extends StatefulWidget {
 class _HistorialPageState extends State<HistorialColorsGamePage> {
   final UserPreferences userPreferences = UserPreferences();
 
-  final _user = FirebaseAuth.instance.currentUser;
   SyncService syncService = SyncService();
   final SpeakerService speakerService = SpeakerService();
 
@@ -39,6 +35,7 @@ class _HistorialPageState extends State<HistorialColorsGamePage> {
 
   late List<ColorsGame> _colorsGames;
   late List<Game> _games;
+  final logger = AppLogger();
 
   final Map<String, Color> _colors = {
     'blue': Colors.blue,
@@ -60,8 +57,6 @@ class _HistorialPageState extends State<HistorialColorsGamePage> {
 
   @override
   void initState() {
-    // TODO: implement initState
-
     syncService.syncColorsGameData();
     super.initState();
     // _speak(
@@ -70,7 +65,7 @@ class _HistorialPageState extends State<HistorialColorsGamePage> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    _stop();
     super.dispose();
   }
 
@@ -94,7 +89,9 @@ class _HistorialPageState extends State<HistorialColorsGamePage> {
     _colorsGames = colorsGameNotifier.getAllColorsGamesList();
     _games = gameNotifier.games;
     if (widget.playerName != '') {
-      _player = playerNotifier.player!;
+      _player = playerNotifier.players
+          .where((item) => item.name == widget.playerName)
+          .first;
       _colorsGames = colorsGameNotifier.getColorsGameByPlayerProgresss(
           _player.uid!, widget.playerProgressId);
     }

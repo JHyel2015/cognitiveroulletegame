@@ -12,17 +12,14 @@ import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/pages/diviner_page.dart';
 import 'package:cognitiveroulletegame/pages/historial_page.dart';
 import 'package:cognitiveroulletegame/pages/players_page.dart';
-import 'package:cognitiveroulletegame/pages/settings_page.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/services/sync_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:provider/provider.dart';
 
@@ -47,23 +44,26 @@ class _HomePageState extends State<HomePage> {
   late DatabaseReference _ledOnRef;
   User? _user;
   late PlayerData _player;
+  final logger = AppLogger();
 
   bool _ledOn = false;
 
-  bool _btnActive = false;
-  BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
+  final bool _btnActive = false;
+  final BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
 
-  String _address = "...";
-  String _name = "...";
+  final String _address = "...";
+  final String _name = "...";
   String _textToSpeak =
-      'Hola playerName, estás en la pantalla principal. Puedes dar clic en el botón Jugar para empezar.';
+      'Hola playerName, soy Ruleto, estás en la pantalla principal. Puedes dar clic en el botón Jugar para empezar.';
 
   bool _toggleValue = false;
 
   @override
   void initState() {
     super.initState();
-
+    _textToSpeak =
+        _textToSpeak.replaceAll('playerName', _userPreferences.playerName);
+    _speak(textToSpeak: _textToSpeak);
     init();
     _loadInitialValue();
     _getCurrentUser();
@@ -72,12 +72,13 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     super.dispose();
+    _ledOnSubscription.cancel();
     _stop();
   }
 
-  Future<void> _speak() async {
+  Future<void> _speak({textToSpeak}) async {
     await speakerService.stop();
-    await speakerService.speak(_textToSpeak);
+    await speakerService.speak(textToSpeak ?? _textToSpeak);
   }
 
   Future _stop() async {
@@ -102,12 +103,12 @@ class _HomePageState extends State<HomePage> {
     try {
       final counterSnapshot = await _ledOnRef.get();
 
-      print(
+      logger.i(
         'Connected to directly configured database and read'
         '${counterSnapshot.value}',
       );
     } catch (err) {
-      print(err);
+      logger.e(err.toString());
     }
 
     _ledOnSubscription = _ledOnRef.onValue.listen(
@@ -115,7 +116,6 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           _ledOn = (event.snapshot.value ?? false) as bool;
           _userPreferences.isLedOn = _ledOn;
-          print(event.snapshot.value);
         });
       },
     );
@@ -182,8 +182,6 @@ class _HomePageState extends State<HomePage> {
 
     _player = playerNotifier.player!;
 
-    _textToSpeak = _textToSpeak.replaceAll('playerName', _player.name);
-
     _userPreferences.isAnonymous = _user != null ? _user!.isAnonymous : false;
 
     return Container(
@@ -240,73 +238,82 @@ class _HomePageState extends State<HomePage> {
                     Image.asset('assets/splash.gif',
                         height: width * .30, width: width * .3),
                     const SizedBox(height: 10),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        backgroundColor: kColorPrimary,
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            // builder: (context) => LevelsPage(),
-                            builder: (context) => DivinerPage(),
-                          ),
-                        );
-                      },
-                      label: Text(
-                        'Jugar',
-                        style: TextStyle(color: kColorSecondary),
-                      ),
-                      icon: Icon(
-                        Icons.play_arrow,
-                        color: kColorSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        backgroundColor: kColorPrimary,
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            // builder: (context) => LevelsPage(),
-                            builder: (context) => HistorialPage(
-                              playerName: _player.name,
+                    SizedBox(
+                      width: width * .4,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: kColorPrimary,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              // builder: (context) => LevelsPage(),
+                              builder: (context) => DivinerPage(),
                             ),
-                          ),
-                        );
-                      },
-                      label: Text(
-                        'Historial',
-                        style: TextStyle(color: kColorSecondary),
-                      ),
-                      icon: Icon(
-                        Icons.list,
-                        color: kColorSecondary,
+                          );
+                        },
+                        label: Text(
+                          'Jugar',
+                          style: TextStyle(color: kColorSecondary),
+                        ),
+                        icon: Icon(
+                          Icons.play_arrow,
+                          color: kColorSecondary,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 5),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        backgroundColor: kColorPrimary,
+                    SizedBox(
+                      width: width * .4,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: kColorPrimary,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              // builder: (context) => LevelsPage(),
+                              builder: (context) => HistorialPage(
+                                playerName: _player.name,
+                              ),
+                            ),
+                          );
+                        },
+                        label: Text(
+                          'Historial',
+                          style: TextStyle(color: kColorSecondary),
+                        ),
+                        icon: Icon(
+                          Icons.list,
+                          color: kColorSecondary,
+                        ),
                       ),
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PlayersPage(),
-                          ),
-                        );
-                      },
-                      label: Text(
-                        'Cambiar jugador',
-                        style: TextStyle(color: kColorSecondary),
-                      ),
-                      icon: Icon(
-                        Icons.change_circle,
-                        color: kColorSecondary,
+                    ),
+                    const SizedBox(height: 5),
+                    SizedBox(
+                      width: width * .4,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: kColorPrimary,
+                        ),
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PlayersPage(),
+                            ),
+                          );
+                        },
+                        label: Text(
+                          'Cambiar jugador',
+                          style: TextStyle(color: kColorSecondary),
+                        ),
+                        icon: Icon(
+                          Icons.change_circle,
+                          color: kColorSecondary,
+                        ),
                       ),
                     ),
                   ],
@@ -347,7 +354,7 @@ class _HomePageState extends State<HomePage> {
               Positioned(
                 left: (MediaQuery.of(context).size.width / 2) - (154 / 2),
                 bottom: 10,
-                child: Container(
+                child: SizedBox(
                   width: 154,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

@@ -140,7 +140,7 @@ class _IntroGamePageState extends State<IntroGamePage> {
                         ),
                 ),
               ),
-              SizedBox(width: 5),
+              const SizedBox(width: 5),
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.blueAccent),
@@ -148,8 +148,8 @@ class _IntroGamePageState extends State<IntroGamePage> {
                 ),
                 child: IconButton(
                   style: ButtonStyle(
-                    side: MaterialStateProperty.all(
-                      BorderSide(width: 1, color: Colors.blueAccent),
+                    side: WidgetStateProperty.all(
+                      const BorderSide(width: 1, color: Colors.blueAccent),
                     ),
                   ),
                   onPressed: _speak,
@@ -185,7 +185,7 @@ class _IntroGamePageState extends State<IntroGamePage> {
                     Container(
                       width: width * .8,
                       height: 300,
-                      padding: EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(25),
                         border: Border.all(color: Colors.blueAccent),
@@ -193,7 +193,7 @@ class _IntroGamePageState extends State<IntroGamePage> {
                       child: Center(
                         child: Text(
                           widget.textToSpeak,
-                          style: TextStyle(fontSize: 25.0),
+                          style: const TextStyle(fontSize: 25.0),
                           textAlign: TextAlign.center,
                         ),
                       ),

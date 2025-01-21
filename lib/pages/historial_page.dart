@@ -5,11 +5,11 @@ import 'package:cognitiveroulletegame/models/game.dart';
 import 'package:cognitiveroulletegame/models/player_data.dart';
 import 'package:cognitiveroulletegame/models/player_progress.dart';
 import 'package:cognitiveroulletegame/pages/historial_colors_game.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/services/sync_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -36,11 +36,10 @@ class _HistorialPageState extends State<HistorialPage> {
 
   late List<PlayerProgress> _playerProgress;
   late List<Game> _games;
+  final logger = AppLogger();
 
   @override
   void initState() {
-    // TODO: implement initState
-
     syncService.syncPlayerProgressData();
     super.initState();
     _speak('En esta pantalla se muestra el historial de partidas del jugador.');
@@ -48,7 +47,7 @@ class _HistorialPageState extends State<HistorialPage> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    _stop();
     super.dispose();
   }
 
@@ -80,7 +79,7 @@ class _HistorialPageState extends State<HistorialPage> {
       (a, b) => b.timestamp.compareTo(a.timestamp),
     );
 
-    return Container(
+    return SizedBox(
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.transparent,
@@ -92,7 +91,7 @@ class _HistorialPageState extends State<HistorialPage> {
           alignment: AlignmentDirectional.center,
           children: [
             if (_playerProgress.isEmpty)
-              Center(
+              const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -123,13 +122,13 @@ class _HistorialPageState extends State<HistorialPage> {
                       .first;
 
                   return ListTile(
-                    leading: Icon(
+                    leading: const Icon(
                       Icons.color_lens,
                       size: 30,
                     ),
                     title: Text(playerName ?? 'Sin nombre'),
                     subtitle: Text(
-                        '${game.name} - ${playerProgress.playedTime} - ${playerProgress.timestamp} - '),
+                        '${game.name} - ${playerProgress.playedTime} - ${playerProgress.timestamp} - ${playerProgress.comment}'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -146,12 +145,15 @@ class _HistorialPageState extends State<HistorialPage> {
                     // Text(
                     // '${playerProgress.attempts} - ${playerProgress.successes} - ${playerProgress.failures}'),
                     onTap: () {
-                      String attempts =
-                          '${playerProgress.attempts} ${playerProgress.attempts == 1 ? 'intento' : 'intentos'}';
-                      String failures =
-                          '${playerProgress.failures} ${playerProgress.failures == 1 ? 'fallo' : 'fallos'}';
-                      String successes =
-                          '${playerProgress.successes} ${playerProgress.successes == 1 ? 'acierto' : 'aciertos'}';
+                      String attempts = playerProgress.attempts == 1
+                          ? 'un intento'
+                          : '${playerProgress.attempts} intentos';
+                      String failures = playerProgress.failures == 1
+                          ? 'un fallo'
+                          : '${playerProgress.failures} fallos';
+                      String successes = playerProgress.successes == 1
+                          ? 'un acierto'
+                          : '${playerProgress.successes} aciertos';
                       _speak(
                           'En esta partida se hizo $attempts con $successes y $failures');
                       // Lógica al seleccionar un registro

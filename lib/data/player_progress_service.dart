@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cognitiveroulletegame/models/player_progress.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class PlayerProgressService {
@@ -9,6 +10,7 @@ class PlayerProgressService {
       FirebaseFirestore.instance.collection(_tableUsers);
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
+  final logger = AppLogger();
 
   // FireStore
   Future<String> addData(PlayerProgress playerProgress) async {
@@ -19,7 +21,7 @@ class PlayerProgressService {
       await documentReference.set(playerProgress.toJson());
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
-      print('Usuario invitado, no puede guardar datos');
+      logger.i('Usuario invitado, no puede guardar datos');
     }
     return documentReference.id;
   }
@@ -34,7 +36,7 @@ class PlayerProgressService {
           .update(playerProgress.toJson());
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
-      print('Usuario invitado, no puede guardar datos');
+      logger.i('Usuario invitado, no puede guardar datos');
     }
   }
 
@@ -48,7 +50,7 @@ class PlayerProgressService {
           .delete();
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
-      print('Usuario invitado, no puede guardar datos');
+      logger.i('Usuario invitado, no puede guardar datos');
     }
   }
 
@@ -67,7 +69,7 @@ class PlayerProgressService {
       }
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
-      print('Usuario invitado, no puede guardar datos');
+      logger.i('Usuario invitado, no puede guardar datos');
     }
   }
 
@@ -113,7 +115,7 @@ class PlayerProgressService {
         return null;
       }
     } catch (e) {
-      print('Error al obtener el elemento de Firestore: $e');
+      logger.e('Error al obtener el elemento de Firestore: $e');
       return null;
     }
   }

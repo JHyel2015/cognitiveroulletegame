@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cognitiveroulletegame/models/player_data.dart';
 
@@ -9,6 +10,7 @@ class PlayerService {
       FirebaseFirestore.instance.collection(_tableUsers);
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
+  final logger = AppLogger();
 
   // FireStore
   Future<String> addData(PlayerData player) async {
@@ -19,7 +21,7 @@ class PlayerService {
       await documentReference.set(player.toJson());
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
-      print('Usuario invitado, no puede guardar datos');
+      logger.i('Usuario invitado, no puede guardar datos');
     }
     return documentReference.id;
   }
@@ -34,7 +36,7 @@ class PlayerService {
           .update(player.toJson());
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
-      print('Usuario invitado, no puede guardar datos');
+      logger.i('Usuario invitado, no puede guardar datos');
     }
   }
 
@@ -48,7 +50,7 @@ class PlayerService {
           .delete();
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
-      print('Usuario invitado, no puede guardar datos');
+      logger.i('Usuario invitado, no puede guardar datos');
     }
   }
 
@@ -84,7 +86,7 @@ class PlayerService {
         return null;
       }
     } catch (e) {
-      print('Error al obtener el elemento de Firestore: $e');
+      logger.e('Error al obtener el elemento de Firestore: $e');
       return null;
     }
   }

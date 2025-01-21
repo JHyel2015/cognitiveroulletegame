@@ -2,14 +2,13 @@ import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/pages/auth_page.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 
 class OnBoardingPage extends StatefulWidget {
-  const OnBoardingPage({Key? key}) : super(key: key);
+  const OnBoardingPage({super.key});
 
   @override
-  _OnBoardingPageState createState() => _OnBoardingPageState();
+  State<OnBoardingPage> createState() => _OnBoardingPageState();
 }
 
 class _OnBoardingPageState extends State<OnBoardingPage> {
@@ -29,7 +28,6 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _speak(_bodies[0]);
   }
@@ -37,14 +35,14 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    var _pageDecoration = PageDecoration(
+    var pageDecoration = const PageDecoration(
       titleTextStyle: TextStyle(fontSize: 28.0, fontWeight: FontWeight.bold),
       bodyPadding: EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
       // pageColor: theme.backgroundColor,
       imagePadding: EdgeInsets.zero,
     );
 
-    List<PageViewModel> _onBoardingList = [
+    List<PageViewModel> onBoardingList = [
       PageViewModel(
         title: 'Bienvenido',
         body: _bodies[0],
@@ -56,7 +54,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
               children: [
                 Image.asset('assets/splash.gif', height: 150, width: 150),
                 const SizedBox(height: 20),
-                Text(
+                const Text(
                   'Cognitive Game',
                   style: TextStyle(
                     fontSize: 24,
@@ -66,7 +64,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
             ),
           ),
         ),
-        decoration: _pageDecoration,
+        decoration: pageDecoration,
       ),
       PageViewModel(
         title: 'Explora los Niveles',
@@ -78,7 +76,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
             child: Image.asset('assets/onboarding_1_explore.gif'),
           ),
         ),
-        decoration: _pageDecoration,
+        decoration: pageDecoration,
       ),
       PageViewModel(
         title: 'Seguimiento de Progreso',
@@ -90,7 +88,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
             child: Image.asset('assets/onboarding_2_progress.gif'),
           ),
         ),
-        decoration: _pageDecoration,
+        decoration: pageDecoration,
       ),
       PageViewModel(
         title: 'Configuración Personalizada',
@@ -102,7 +100,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
             child: Image.asset('assets/onboarding_3_customize.gif'),
           ),
         ),
-        decoration: _pageDecoration,
+        decoration: pageDecoration,
       ),
     ];
 
@@ -112,7 +110,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
         child: Center(
           child: IntroductionScreen(
             key: introKey,
-            pages: _onBoardingList,
+            pages: onBoardingList,
             onDone: () {
               speakerService.stop();
               _onIntroEnd(context);
@@ -122,13 +120,13 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
               speakerService.speak(_bodies[page]);
             },
             showSkipButton: true,
-            skip: Text('Saltar'),
-            next: Icon(Icons.arrow_forward_ios),
-            done: Text('Hecho'),
+            skip: const Text('Saltar'),
+            next: const Icon(Icons.arrow_forward_ios),
+            done: const Text('Hecho'),
             dotsDecorator: DotsDecorator(
-              size: Size(10.0, 10.0),
+              size: const Size(10.0, 10.0),
               // color: theme.primaryColor,
-              activeSize: Size(22.0, 10.0),
+              activeSize: const Size(22.0, 10.0),
               activeShape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0),
               ),
@@ -144,7 +142,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AuthPage(),
+        builder: (context) => const AuthPage(),
       ),
     );
   }

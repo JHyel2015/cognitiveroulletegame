@@ -34,13 +34,14 @@ class _PlayersPageState extends State<PlayersPage> {
 
   List<PlayerData> players = [];
 
-  String _textToSpeak =
-      'Hola, estás en la pantalla jugadores. Puedes crear varios perfiles de jugador con el boton agregar jugador';
+  final String _textToSpeak =
+      'Hola, soy Ruleto, estás en la pantalla jugadores. Puedes crear varios perfiles de jugador con el boton agregar jugador';
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    _speak(textToSpeak: _textToSpeak);
     _getCurrentUser();
   }
 
@@ -50,9 +51,9 @@ class _PlayersPageState extends State<PlayersPage> {
     _stop();
   }
 
-  Future<void> _speak() async {
+  Future<void> _speak({textToSpeak}) async {
     await speakerService.stop();
-    await speakerService.speak(_textToSpeak);
+    await speakerService.speak(textToSpeak ?? _textToSpeak);
   }
 
   Future _stop() async {
@@ -256,7 +257,7 @@ class _PlayersPageState extends State<PlayersPage> {
             return AlertDialog(
               title: Text(
                   "¿Estás seguro de que deseas eliminar el jugador \"$key\"?"),
-              content: Text(
+              content: const Text(
                 "Recuerda que al eliminar este jugador todo el progreso también se eliminará",
               ),
               actions: [
@@ -279,7 +280,7 @@ class _PlayersPageState extends State<PlayersPage> {
                 ),
                 TextButton.icon(
                   style: TextButton.styleFrom(backgroundColor: Colors.red),
-                  label: Text(
+                  label: const Text(
                     "Eliminar",
                     style: TextStyle(color: Colors.white),
                   ),
@@ -307,7 +308,7 @@ class _PlayersPageState extends State<PlayersPage> {
         return AlertDialog(
           title:
               Text("¿Estás seguro de que deseas eliminar el jugador \"$key\"?"),
-          content: Text(
+          content: const Text(
             "Recuerda que al eliminar este jugador todo el progreso también se eliminará",
           ),
           actions: [
@@ -409,6 +410,8 @@ class _PlayersPageState extends State<PlayersPage> {
                                 size: 30), // Icono de eliminar
                           ),
                           child: Container(
+                            width: width * .75,
+                            margin: EdgeInsets.only(bottom: 5),
                             decoration: BoxDecoration(
                               color: Colors.blue[50], // Otro fondo de ListTile
                               border:
@@ -420,8 +423,8 @@ class _PlayersPageState extends State<PlayersPage> {
                                       .withOpacity(0.5), // Color de la sombra
                                   spreadRadius: 2, // Extensión de la sombra
                                   blurRadius: 5, // Difuminado de la sombra
-                                  offset:
-                                      Offset(0, 3), // Dirección de la sombra
+                                  offset: const Offset(
+                                      0, 3), // Dirección de la sombra
                                 ),
                               ],
                             ),
@@ -444,6 +447,7 @@ class _PlayersPageState extends State<PlayersPage> {
                               ),
                               onTap: () {
                                 playerNotifier.selectProfile(item);
+                                userPreferences.playerName = item.name;
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -455,70 +459,79 @@ class _PlayersPageState extends State<PlayersPage> {
                           ),
                         );
                       },
-                    ).toList(),
+                    ),
                     const SizedBox(height: 10),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        backgroundColor: kColorPrimary,
-                      ),
-                      onPressed: () {
-                        openBox();
-                      },
-                      label: Text(
-                        'Agregar jugador',
-                        style: TextStyle(color: kColorSecondary),
-                      ),
-                      icon: Icon(
-                        Icons.add,
-                        color: kColorSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        backgroundColor: kColorPrimary,
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            // builder: (context) => LevelsPage(),
-                            builder: (context) => SettingsPage(),
-                          ),
-                        );
-                      },
-                      label: Text(
-                        'Ajustes',
-                        style: TextStyle(color: kColorSecondary),
-                      ),
-                      icon: Icon(
-                        Icons.settings,
-                        color: kColorSecondary,
+                    SizedBox(
+                      width: width * .40,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: kColorPrimary,
+                        ),
+                        onPressed: () {
+                          openBox();
+                        },
+                        label: Text(
+                          'Agregar jugador',
+                          style: TextStyle(color: kColorSecondary),
+                        ),
+                        icon: Icon(
+                          Icons.add,
+                          color: kColorSecondary,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 5),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        backgroundColor: kColorPrimary,
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            // builder: (context) => LevelsPage(),
-                            builder: (context) => HistorialPage(
-                              playerName: '',
+                    SizedBox(
+                      width: width * .4,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: kColorPrimary,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              // builder: (context) => LevelsPage(),
+                              builder: (context) => const SettingsPage(),
                             ),
-                          ),
-                        );
-                      },
-                      label: Text(
-                        'Historial',
-                        style: TextStyle(color: kColorSecondary),
+                          );
+                        },
+                        label: Text(
+                          'Ajustes',
+                          style: TextStyle(color: kColorSecondary),
+                        ),
+                        icon: Icon(
+                          Icons.settings,
+                          color: kColorSecondary,
+                        ),
                       ),
-                      icon: Icon(
-                        Icons.list,
-                        color: kColorSecondary,
+                    ),
+                    const SizedBox(height: 5),
+                    SizedBox(
+                      width: width * .4,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: kColorPrimary,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              // builder: (context) => LevelsPage(),
+                              builder: (context) => HistorialPage(
+                                playerName: '',
+                              ),
+                            ),
+                          );
+                        },
+                        label: Text(
+                          'Historial',
+                          style: TextStyle(color: kColorSecondary),
+                        ),
+                        icon: Icon(
+                          Icons.list,
+                          color: kColorSecondary,
+                        ),
                       ),
                     ),
                   ],

@@ -134,7 +134,7 @@ class _LoginPageState extends State<RegisterPage> {
         return null;
       }
 
-      final GoogleSignInAuthentication? googleAuth =
+      final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
@@ -251,14 +251,14 @@ class _LoginPageState extends State<RegisterPage> {
                   const SizedBox(height: 20),
                   Image.asset('assets/splash.gif', height: 99, width: 99),
                   const SizedBox(height: 20),
-                  Text(
+                  const Text(
                     'Cognitive Game',
                     style: TextStyle(
                       fontSize: 24,
                     ),
                   ),
                   const SizedBox(height: 30),
-                  Text(
+                  const Text(
                     'Vamos a crear una cuenta',
                     style: TextStyle(
                       fontSize: 24,
@@ -288,7 +288,7 @@ class _LoginPageState extends State<RegisterPage> {
                     obscureText: true,
                   ),
                   const SizedBox(height: 10),
-                  Padding(
+                  const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 25.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -300,7 +300,7 @@ class _LoginPageState extends State<RegisterPage> {
                   const SizedBox(height: 25),
                   TextButton(
                     style: TextButton.styleFrom(
-                      minimumSize: Size.fromHeight(50),
+                      minimumSize: const Size.fromHeight(50),
                       backgroundColor: kColorPrimary,
                     ),
                     onPressed: signUserUp,
@@ -315,7 +315,7 @@ class _LoginPageState extends State<RegisterPage> {
                     children: [
                       OutlinedButton(
                         style: TextButton.styleFrom(
-                          minimumSize: Size.fromHeight(50),
+                          minimumSize: const Size.fromHeight(50),
                           side: BorderSide(width: 1.0, color: kColorPrimary),
                         ),
                         onPressed: signUserWithGoogle,
@@ -325,7 +325,7 @@ class _LoginPageState extends State<RegisterPage> {
                             Image.asset('assets/google.png',
                                 height: 25, width: 25),
                             const SizedBox(width: 10),
-                            Text(
+                            const Text(
                               'Ingresar con Google',
                             ),
                           ],
@@ -334,11 +334,11 @@ class _LoginPageState extends State<RegisterPage> {
                       const SizedBox(height: 20),
                       OutlinedButton(
                         style: TextButton.styleFrom(
-                          minimumSize: Size.fromHeight(50),
+                          minimumSize: const Size.fromHeight(50),
                           side: BorderSide(width: 1.0, color: kColorPrimary),
                         ),
                         onPressed: signInAnonymously,
-                        child: Text(
+                        child: const Text(
                           'Ingresar como invitado',
                         ),
                       ),
@@ -348,11 +348,11 @@ class _LoginPageState extends State<RegisterPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('¿Ya tienes cuenta?'),
+                      const Text('¿Ya tienes cuenta?'),
                       const SizedBox(height: 4),
                       CupertinoButton(
                         onPressed: widget.onPressed,
-                        child: Text('Inicia sesión ahora'),
+                        child: const Text('Inicia sesión ahora'),
                       ),
                     ],
                   ),

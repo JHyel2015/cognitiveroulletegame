@@ -40,9 +40,9 @@ class RuletaPainter extends CustomPainter {
         segmentPaint,
       );
 
-      final textSpan = TextSpan(
+      const textSpan = TextSpan(
         text: '',
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.black,
           fontSize: 14,
         ),

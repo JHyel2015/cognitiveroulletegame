@@ -16,12 +16,11 @@ class DivinerPage extends StatefulWidget {
 
 class _DivinerPageState extends State<DivinerPage> {
   final SpeakerService speakerService = SpeakerService();
-  String _textToSpeak =
+  final String _textToSpeak =
       'En esta pantalla puedes seleccionar el juego que deseas deslizando de izquierda a derecha';
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
   }
 

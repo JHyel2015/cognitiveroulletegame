@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cognitiveroulletegame/models/colors_game.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ColorsGameService {
@@ -10,6 +11,7 @@ class ColorsGameService {
       FirebaseFirestore.instance.collection(_tableUsers);
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
+  final logger = AppLogger();
 
   // FireStore
   Future<String> addData(ColorsGame colorsGame) async {
@@ -20,13 +22,11 @@ class ColorsGameService {
         .doc(colorsGame.userId)
         .collection(_table)
         .doc();
-    print(
-        '${ColorsGameService._table} ${_user!.isAnonymous.toString()} ${documentReference.id}');
     if (_user != null && !_user!.isAnonymous) {
       await documentReference.set(colorsGame.toJson());
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
-      print('Usuario invitado, no puede guardar datos');
+      logger.i('Usuario invitado, no puede guardar datos');
     }
     return documentReference.id;
   }
@@ -43,7 +43,7 @@ class ColorsGameService {
           .update(colorsGame.toJson());
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
-      print('Usuario invitado, no puede guardar datos');
+      logger.i('Usuario invitado, no puede guardar datos');
     }
   }
 
@@ -59,7 +59,7 @@ class ColorsGameService {
           .delete();
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
-      print('Usuario invitado, no puede borrar datos');
+      logger.i('Usuario invitado, no puede borrar datos');
     }
   }
 
@@ -79,7 +79,7 @@ class ColorsGameService {
       }
     } else {
       // Usuario autenticado de forma anónima, no permitir la carga de datos
-      print('Usuario invitado, no puede guardar datos');
+      logger.i('Usuario invitado, no puede guardar datos');
     }
   }
 
@@ -137,7 +137,7 @@ class ColorsGameService {
         return null;
       }
     } catch (e) {
-      print('Error al obtener el elemento de Firestore: $e');
+      logger.e('Error al obtener el elemento de Firestore: $e');
       return null;
     }
   }

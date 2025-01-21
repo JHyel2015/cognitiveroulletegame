@@ -4,12 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:cognitiveroulletegame/data/user_dao.dart';
 import 'package:cognitiveroulletegame/data/user_service.dart';
 import 'package:cognitiveroulletegame/models/user_data.dart';
-import 'package:cognitiveroulletegame/services/sync_service.dart';
 
 class UserNotifier extends ChangeNotifier {
   final UserDao _userDao = UserDao();
   final UserService _userService = UserService();
-  final SyncService _syncService = SyncService();
   final UserPreferences _userPreferences = UserPreferences();
   final List<UserData> _users = [];
 

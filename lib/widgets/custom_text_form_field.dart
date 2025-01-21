@@ -1,5 +1,4 @@
 import 'package:cognitiveroulletegame/constans.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class CustomTextFormField extends StatelessWidget {
@@ -31,7 +30,7 @@ class CustomTextFormField extends StatelessWidget {
           borderRadius: BorderRadius.circular(25),
         ),
         errorBorder: OutlineInputBorder(
-          borderSide: BorderSide(width: 2, color: Colors.redAccent),
+          borderSide: const BorderSide(width: 2, color: Colors.redAccent),
           borderRadius: BorderRadius.circular(25),
         ),
       ),

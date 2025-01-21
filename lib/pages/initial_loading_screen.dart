@@ -1,3 +1,4 @@
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +17,7 @@ class InitialLoadingScreen extends StatefulWidget {
 
 class _InitialLoadingScreenState extends State<InitialLoadingScreen> {
   final userPreferences = UserPreferences();
+  final logger = AppLogger();
 
   final List<String> imageUrls = [];
   // Map<String, String> _imageName = Map<String, String>();
@@ -32,7 +34,7 @@ class _InitialLoadingScreenState extends State<InitialLoadingScreen> {
       ListResult result = await FirebaseStorage.instance.ref().listAll();
       for (var ref in result.items) {
         String downloadURL = await ref.getDownloadURL();
-        Map<String, String> imageName = Map<String, String>();
+        Map<String, String> imageName = <String, String>{};
         imageName['url'] = downloadURL;
         imageName['imageName'] = ref.name;
         imagesToCache.add(imageName);
@@ -40,21 +42,21 @@ class _InitialLoadingScreenState extends State<InitialLoadingScreen> {
         // _imageName[ref.name] = downloadURL;
       }
     } catch (e) {
-      print('Error al obtener los archivos del bucket de Firebase Storage: $e');
+      logger.e(
+          'Error al obtener los archivos del bucket de Firebase Storage: $e');
     }
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     // _getFiles().whenComplete(() {
     //   _cacheImagesOnStartup();
-    //   print('Termino la descarga');
+    //   logger.i('Termino la descarga');
     // });
     _cacheImagesGetFiles();
 
-    print(imagesToCache);
+    logger.d(imagesToCache.toString());
   }
 
   Future<void> _cacheImagesGetFiles() async {
@@ -68,8 +70,9 @@ class _InitialLoadingScreenState extends State<InitialLoadingScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            userPreferences.firstTime ? OnBoardingPage() : AuthPage(),
+        builder: (_) => userPreferences.firstTime
+            ? const OnBoardingPage()
+            : const AuthPage(),
       ),
     );
   }
@@ -90,8 +93,9 @@ class _InitialLoadingScreenState extends State<InitialLoadingScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            userPreferences.firstTime ? OnBoardingPage() : AuthPage(),
+        builder: (_) => userPreferences.firstTime
+            ? const OnBoardingPage()
+            : const AuthPage(),
       ),
     );
   }
@@ -108,13 +112,13 @@ class _InitialLoadingScreenState extends State<InitialLoadingScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(
+            const CircularProgressIndicator(),
+            const SizedBox(
               height: 25,
             ),
-            Text('Estamos preparando todo para ti'),
-            Text("Descargando archivos..."),
-            SizedBox(height: 20),
+            const Text('Estamos preparando todo para ti'),
+            const Text("Descargando archivos..."),
+            const SizedBox(height: 20),
             ValueListenableBuilder<double>(
               valueListenable: savedImageNotifier.progressNotifier,
               builder: (context, progress, child) {
@@ -144,7 +148,7 @@ class _InitialLoadingScreenState extends State<InitialLoadingScreen> {
   //     //     .loadImages(imageUrls, context);
 
   //     builder: (context, snapshot) {
-  //       print(snapshot.connectionState);
+  //       logger.i(snapshot.connectionState);
   //       if (snapshot.connectionState == ConnectionState.waiting) {
   //         return Scaffold(
   //           body: Center(

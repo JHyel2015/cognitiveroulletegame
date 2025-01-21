@@ -12,13 +12,13 @@ import firebase_auth
 import firebase_core
 import firebase_database
 import firebase_storage
-import flutter_blue_plus
+import flutter_blue_plus_macos
 import flutter_tts
 import google_sign_in_ios
 import package_info_plus
 import path_provider_foundation
 import shared_preferences_foundation
-import sqflite
+import sqflite_darwin
 import wakelock_plus
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {

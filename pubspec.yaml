@@ -43,6 +43,7 @@ dependencies:
   wakelock_plus: ^1.2.8
   dio: ^5.7.0
   audioplayers: ^6.1.0
+  logger: ^2.5.0
 
 dev_dependencies:
   flutter_test:

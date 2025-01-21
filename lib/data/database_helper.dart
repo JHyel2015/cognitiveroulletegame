@@ -126,13 +126,12 @@ class DatabaseHelper {
 
   Future<void> sendDataToBackend(String table) async {
     // Obtener solo los datos no sincronizados de SQLite
-    List<Map<String, dynamic>> unsyncedData = await getUnsyncedData(table);
+    // List<Map<String, dynamic>> unsyncedData = await getUnsyncedData(table);
 
     // URL del endpoint de tu API backend
-    String apiUrl = 'https://tu-api-backend.com/$table';
+    // String apiUrl = 'https://tu-api-backend.com/$table';
 
     // Realizar la solicitud HTTP POST al backend con los datos no sincronizados
-    // TODO
     // await http.post(
     //   Uri.parse(apiUrl),
     //   body: {

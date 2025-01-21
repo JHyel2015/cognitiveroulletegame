@@ -1,43 +1,33 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_notifier.dart';
 import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/models/colors_game.dart';
-import 'package:cognitiveroulletegame/models/esp32.dart';
 import 'package:cognitiveroulletegame/models/player_data.dart';
 import 'package:cognitiveroulletegame/models/player_progress.dart';
-import 'package:cognitiveroulletegame/services/image_cache_service.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
-import 'package:cognitiveroulletegame/widgets/ruleta_painter.dart';
 import 'package:cognitiveroulletegame/components/star_rating.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 // import 'package:flutter_blue/flutter_blue.dart';
-import 'package:http/http.dart' as http;
 
-import 'package:image/image.dart' as img;
 import 'package:flutter_image_filters/flutter_image_filters.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 class CounterGamePage extends StatefulWidget {
-  int gameId;
-  String title;
-  String textToSpeak;
-  CounterGamePage({
+  final int gameId;
+  final String title;
+  final String textToSpeak;
+  const CounterGamePage({
     required this.gameId,
     required this.title,
     required this.textToSpeak,
@@ -59,16 +49,13 @@ class _CounterGamePageState extends State<CounterGamePage>
   // TextController
   final UserPreferences userPreferences = UserPreferences();
 
-  final _user = FirebaseAuth.instance.currentUser;
   late PlayerData _player;
   final SpeakerService speakerService = SpeakerService();
+  final logger = AppLogger();
 
   bool _exited = false;
   bool _ledOn = false;
   int _counter = 0;
-  int _valorEnvio = 0;
-  int _valorRecibido = 0;
-  Sensores _sensores = Sensores();
   // final FirebaseDatabase _databaseReference = FirebaseDatabase.instance;
   late FirebaseApp _secondaryApp;
   late FirebaseDatabase _databaseReference;
@@ -105,7 +92,6 @@ class _CounterGamePageState extends State<CounterGamePage>
   late Animation<double> _animation4;
 
   double _currentAngle = pi / 6;
-  double _angle = pi / 2;
   final int _segments = 6;
 
   int _time = 0;
@@ -167,19 +153,19 @@ class _CounterGamePageState extends State<CounterGamePage>
     try {
       final counterSnapshot = await _ledOnRef.get();
 
-      print(
+      logger.i(
         'Connected to directly configured database and read'
         '${counterSnapshot.value}',
       );
     } catch (err) {
-      print(err);
+      logger.e(err.toString());
     }
 
     _ledOnSubscription = _ledOnRef.onValue.listen(
       (DatabaseEvent event) {
         setState(() {
           _ledOn = (event.snapshot.value ?? false) as bool;
-          print(event.snapshot.value);
+          logger.d(event.snapshot.value.toString());
         });
       },
     );
@@ -188,7 +174,7 @@ class _CounterGamePageState extends State<CounterGamePage>
       (DatabaseEvent event) async {
         setState(() {
           _counter = (event.snapshot.value ?? 0) as int;
-          print(event.snapshot.value);
+          logger.d(event.snapshot.value.toString());
           if (_counter > 0) {
             stopAndGenerateNumbers();
             _speak('Escoge entre las cartas el número que contaste');
@@ -297,7 +283,7 @@ class _CounterGamePageState extends State<CounterGamePage>
       Future.delayed(Duration(seconds: _time), () {
         _animationController.stop();
         _animationController2.stop();
-        print('Se cumplio el tiempo');
+        logger.i('Se cumplio el tiempo');
         if (_isWakelockEnabled) {
           WakelockPlus.disable();
         }
@@ -332,7 +318,7 @@ class _CounterGamePageState extends State<CounterGamePage>
     final random = Random();
     int number = random.nextInt(_segments);
     if (_ledOn) {
-      print(
+      logger.d(
           'entra primera vez ${_colorList[number].substring(0, 1).toUpperCase()}${_colorList[number].substring(1).toLowerCase()}');
     }
     setState(() {
@@ -377,7 +363,6 @@ class _CounterGamePageState extends State<CounterGamePage>
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
-    double height = MediaQuery.of(context).size.height;
     final playerNotifier = Provider.of<PlayerNotifier>(context);
 
     _player = playerNotifier.player!;

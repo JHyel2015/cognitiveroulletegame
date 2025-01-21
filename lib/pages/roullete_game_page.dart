@@ -14,6 +14,7 @@ import 'package:cognitiveroulletegame/models/colors_game.dart';
 import 'package:cognitiveroulletegame/models/esp32.dart';
 import 'package:cognitiveroulletegame/models/player_data.dart';
 import 'package:cognitiveroulletegame/models/player_progress.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:cognitiveroulletegame/services/image_cache_service.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
@@ -51,7 +52,6 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     with SingleTickerProviderStateMixin {
   final Stopwatch _stopwatch = Stopwatch();
   final AudioPlayer _audioPlayer = AudioPlayer();
-  Timer? _timer;
   int nElements = 6;
   final commentController = TextEditingController();
   // PageController
@@ -62,13 +62,14 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   final _user = FirebaseAuth.instance.currentUser;
   late PlayerData _player;
   final SpeakerService speakerService = SpeakerService();
+  final logger = AppLogger();
 
   bool _exited = false;
   bool _ledOn = false;
   int _valorEnvio = 0;
   int _indiceRuleta = 0;
   // Sensores _sensores = Sensores();
-  ColorQueJuega _colorQueJuega = ColorQueJuega();
+  final ColorQueJuega _colorQueJuega = ColorQueJuega();
   // final FirebaseDatabase _databaseReference = FirebaseDatabase.instance;
   late FirebaseApp _secondaryApp;
   late FirebaseDatabase _databaseReference;
@@ -95,7 +96,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   int _fallos = 0;
 
   bool _visible = false;
-  bool _firstTime = true;
+  final bool _firstTime = true;
 
   late Duration elapsedTime;
 
@@ -104,7 +105,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   late AnimationStatusListener _statusListener;
   double _currentAngle = pi / 6;
   double _angle = pi / 2;
-  int _segments = 6;
+  final int _segments = 6;
 
   int _time = 0;
 
@@ -147,12 +148,10 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     (2 * pi - pi / 6) - (2 * pi / 3),
   ];
 
-  List<String> _imagePaths = [];
-
-  Map<String, Image> _imagesMap = Map<String, Image>();
+  final Map<String, Image> _imagesMap = <String, Image>{};
 
   List<Image> _images = [];
-  late List<Image> _randomImages = [];
+  late List<Image?> _randomImages = [];
 
   late TextureSource texture;
   late BrightnessShaderConfiguration configuration;
@@ -161,6 +160,9 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   String? _playerProgressId;
 
   bool _isWakelockEnabled = false;
+
+  int _remainingTime = 0;
+  bool _isDisposed = false;
 
   Future<void> init() async {
     _secondaryApp = Firebase.app('esp32colores');
@@ -191,19 +193,19 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     try {
       final counterSnapshot = await _ledOnRef.get();
 
-      print(
+      logger.i(
         'Connected to directly configured database and read'
         '${counterSnapshot.value}',
       );
     } catch (err) {
-      print(err);
+      logger.e(err.toString());
     }
 
     _ledOnSubscription = _ledOnRef.onValue.listen(
       (DatabaseEvent event) {
         setState(() {
           _ledOn = (event.snapshot.value ?? false) as bool;
-          print(event.snapshot.value);
+          logger.d(event.snapshot.value.toString());
         });
       },
     );
@@ -222,7 +224,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
           await _botonRef.set(0);
         }
         setState(() {
-          print(event.snapshot.value);
+          logger.d(event.snapshot.value.toString());
         });
       },
     );
@@ -235,7 +237,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
             _angle = 0;
             _angle = _angles[_indiceRuleta];
             _currentAngle = _angle;
-            print('3 ${_colorQueJuega.toJson().toString()}');
+            logger.d('3 ${_colorQueJuega.toJson().toString()}');
           });
           await _aciertoRef.set(0);
         }
@@ -247,7 +249,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     try {
       await _audioPlayer.play(AssetSource(assetPath));
     } catch (e) {
-      print('Error al reproducir el sonido: $e');
+      logger.e('Error al reproducir el sonido: $e');
     }
   }
 
@@ -273,7 +275,9 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     final image = savedImageNotifier.getFilteredImages('animal-');
 
     for (var img in image) {
-      _imagesMap[img.name] = Image.file(File(img.imagePath));
+      if (File(img.imagePath).existsSync()) {
+        _imagesMap[img.name] = Image.file(File(img.imagePath));
+      }
     }
 
     _images = _imagesMap.values.toList();
@@ -283,17 +287,17 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     setState(() {});
     _animationController.forward(from: 0);
     _stopwatch.start();
-    if (_exited) {
-      Future.delayed(Duration(seconds: _time), () {
+    Future.delayed(Duration(seconds: _time), () {
+      if (!_isDisposed) {
         _animationController.stop();
-        print('Se cumplio el tiempo');
+        logger.i('Se cumplio el tiempo');
         if (_isWakelockEnabled) {
           WakelockPlus.disable();
         }
         _isWakelockEnabled = false;
         openBox();
-      });
-    }
+      }
+    });
   }
 
   List<T> getRandomElements<T>(List<T> list, int n) {
@@ -302,16 +306,16 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   }
 
   void randomElements() {
-    List<Image> randomImages = [];
+    List<Image?> randomImages = List.filled(6, null, growable: false);
 
-    for (var i = 0; i < _colorList.length; i++) {
+    for (var i = 0; i < _colorList.length && _images.isNotEmpty; i++) {
       var keyList = _imagesMap.keys
           .toList()
           .where((item) => item.contains('-${_colorList[i]}-'))
           .toList();
       keyList.shuffle();
       keyList.first;
-      randomImages.add(_imagesMap[keyList.first]!);
+      randomImages[i] = _imagesMap[keyList.first]!;
     }
 
     _randomImages = randomImages;
@@ -320,6 +324,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
   @override
   void initState() {
     super.initState();
+    _remainingTime = userPreferences.time;
     _speak();
     _ledOn = userPreferences.isLedOn;
     init();
@@ -356,8 +361,21 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
       parent: _animationController,
       curve: Curves.linear,
     );
-    _animation = Tween<double>(begin: -(pi / 2), end: (2 * pi * 4) - (pi / 2))
-        .animate(curvedAnimation);
+    // _animation = Tween<double>(begin: -(pi / 2), end: (2 * pi * 4) - (pi / 2))
+
+    // Configurar un TweenSequence para saltos de 60 grados
+    _animation = TweenSequence<double>(
+      List.generate(
+        6,
+        (index) => TweenSequenceItem(
+          tween: Tween<double>(
+            begin: -(pi / 2) + (index * (pi / 3)),
+            end: -(pi / 2) + (index * (pi / 3)),
+          ),
+          weight: 1,
+        ),
+      ),
+    ).animate(curvedAnimation);
 
     configuration = BrightnessShaderConfiguration();
     configuration.brightness = 0.5;
@@ -373,7 +391,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
 
   @override
   void dispose() {
-    _timer?.cancel(); // Cancelar el temporizador al salir de la pantalla
+    _isDisposed = true;
     _stopwatch.stop();
     _animationController.dispose();
     _controller.dispose();
@@ -393,7 +411,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
       number = random.nextInt(_segments);
     } while (_randomNum == number);
     if (_ledOn) {
-      print(
+      logger.i(
           'entra primera vez ${_colorList[number].substring(0, 1).toUpperCase()}${_colorList[number].substring(1).toLowerCase()}');
       await _sensoresRef.update(
         {
@@ -472,7 +490,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
           top: y - 50, // Adjust the offset to center the image
           width: 100,
           height: 100,
-          child: _randomImages[i],
+          child: _randomImages[i] ?? SizedBox(),
         ),
       );
     }
@@ -488,25 +506,25 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
 
     _player = playerNotifier.player!;
 
-    if (_images.isEmpty) {
-      return Container(
-        color: kColorSecondary,
-        child: SafeArea(
-          child: Scaffold(
-            appBar: AppBar(
-              automaticallyImplyLeading: false,
-              centerTitle: true,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              title: Text(widget.title),
-            ),
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          ),
-        ),
-      );
-    }
+    // if (_images.isEmpty) {
+    //   return Container(
+    //     color: kColorSecondary,
+    //     child: SafeArea(
+    //       child: Scaffold(
+    //         appBar: AppBar(
+    //           automaticallyImplyLeading: false,
+    //           centerTitle: true,
+    //           backgroundColor: Colors.transparent,
+    //           elevation: 0,
+    //           title: Text(widget.title),
+    //         ),
+    //         body: Center(
+    //           child: CircularProgressIndicator(),
+    //         ),
+    //       ),
+    //     ),
+    //   );
+    // }
 
     return Container(
       color: kColorSecondary,
@@ -550,6 +568,20 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
             alignment: AlignmentDirectional.center,
             children: [
               Positioned(
+                top: 100,
+                left: 10,
+                child: Container(
+                  padding: const EdgeInsets.all(10.0),
+                  margin: EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: Colors.blueAccent),
+                  ),
+                  child: Text(
+                      '${Duration(seconds: _stopwatch.elapsed.inSeconds).toString().split('.')[0].substring(2)}'),
+                ),
+              ),
+              Positioned(
                 left: 10,
                 bottom: 10,
                 child: InkWell(
@@ -583,59 +615,67 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
                       ),
                     ),
                     const SizedBox(height: 35),
-                    Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Colors.grey,
-                        shape: BoxShape.circle,
-                      ),
-                      child: CircularProgressIndicator(
-                        backgroundColor: _colors[_randomNum],
-                        color: Colors.grey,
-                        value: _animationController.value,
-                        strokeWidth: 40.0,
-                      ),
+                    Stack(
+                      alignment: AlignmentDirectional.center,
+                      children: [
+                        Container(
+                          width: 150,
+                          height: 150,
+                          decoration: BoxDecoration(
+                            color: Colors.grey,
+                            shape: BoxShape.circle,
+                          ),
+                          child: CircularProgressIndicator(
+                            backgroundColor: _colors[_randomNum],
+                            color: Colors.grey,
+                            value: _animationController.value,
+                            strokeWidth: 40.0,
+                          ),
+                        ),
+                        Text(
+                          '${Duration(seconds: 15 - (_animationController.value * 15).toInt()).toString().split('.')[0].substring(2)}',
+                        ),
+                      ],
                     ),
-                    if (_randomImages.isNotEmpty)
-                      Expanded(
-                        child: Center(
-                          child: GestureDetector(
-                            onTap: _animationController.isAnimating
-                                ? _stopAnimation
-                                : _spinAnimation,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                CustomPaint(
-                                  size: Size(350, 350),
-                                  painter: RuletaPainter(
-                                      0.0 - (2 * pi / 3), 6, _colors, []),
-                                ),
+                    Expanded(
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: _animationController.isAnimating
+                              ? _stopAnimation
+                              : _spinAnimation,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CustomPaint(
+                                size: Size(350, 350),
+                                painter: RuletaPainter(
+                                    0.0 - (2 * pi / 3), 6, _colors, []),
+                              ),
+                              if (_randomImages.isNotEmpty)
                                 ..._buildPositionedImages(),
-                                Transform.rotate(
-                                  angle: _currentAngle,
-                                  child: Image.asset(
-                                    'assets/flecha.png',
-                                    width: 225,
-                                    height: 225,
-                                  ),
+                              Transform.rotate(
+                                angle: _currentAngle,
+                                child: Image.asset(
+                                  'assets/flecha.png',
+                                  width: 225,
+                                  height: 225,
                                 ),
-                                Visibility(
-                                  visible: _visible,
-                                  child: Image.asset(
-                                    _segmentIndex == _randomNum
-                                        ? 'assets/check.png'
-                                        : 'assets/fail.webp',
-                                    width: 350,
-                                    height: 350,
-                                  ),
+                              ),
+                              Visibility(
+                                visible: _visible,
+                                child: Image.asset(
+                                  _segmentIndex == _randomNum
+                                      ? 'assets/check.png'
+                                      : 'assets/fail.webp',
+                                  width: 350,
+                                  height: 350,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -690,107 +730,110 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
                   borderRadius: BorderRadius.all(Radius.circular(10))),
               child: Container(
                 padding: EdgeInsets.all(15),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Fin del juego',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 15),
-                    StarRating(attempts: _intentos, correctAnswers: _aciertos),
-                    SizedBox(height: 15),
-                    Text(
-                      'Resultados',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 15),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Chip(
-                              //avatar: Icon(Icons.schedule),
-                              label: Text(
-                                  'Tiempo ${Duration(seconds: _time).toString().split('.')[0].substring(2)}'),
-                            ),
-                            Chip(
-                              //avatar: Icon(Icons.sunny),
-                              label: Text('Aciertos ${_aciertos.toString()}'),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Chip(
-                              //avatar: Icon(Icons.sunny),
-                              label: Text('Intentos ${_intentos.toString()}'),
-                            ),
-                            Chip(
-                              //avatar: Icon(Icons.sunny),
-                              label: Text('Fallos ${_fallos.toString()}'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 15),
-                    Text(
-                      'Comentarios',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 15),
-                    TextFormField(
-                      controller: commentController,
-                      maxLines: 6,
-                      readOnly: userPreferences.isAnonymous,
-                      decoration: InputDecoration(
-                        hintText: userPreferences.isAnonymous
-                            ? 'Usuario invitado no puede ingresar comentarios ni guardar resultados'
-                            : '',
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(width: 2, color: kColorPrimary),
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(width: 2, color: kColorPrimary),
-                          borderRadius: BorderRadius.circular(25),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Fin del juego',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 15),
+                      StarRating(
+                          attempts: _intentos, correctAnswers: _aciertos),
+                      SizedBox(height: 15),
+                      Text(
+                        'Resultados',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 15),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Chip(
+                                //avatar: Icon(Icons.schedule),
+                                label: Text(
+                                    'Tiempo ${Duration(seconds: _time).toString().split('.')[0].substring(2)}'),
+                              ),
+                              Chip(
+                                //avatar: Icon(Icons.sunny),
+                                label: Text('Aciertos ${_aciertos.toString()}'),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Chip(
+                                //avatar: Icon(Icons.sunny),
+                                label: Text('Intentos ${_intentos.toString()}'),
+                              ),
+                              Chip(
+                                //avatar: Icon(Icons.sunny),
+                                label: Text('Fallos ${_fallos.toString()}'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 15),
+                      Text(
+                        'Comentarios',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 15),
+                      TextFormField(
+                        controller: commentController,
+                        maxLines: 6,
+                        readOnly: userPreferences.isAnonymous,
+                        decoration: InputDecoration(
+                          hintText: userPreferences.isAnonymous
+                              ? 'Usuario invitado no puede ingresar comentarios ni guardar resultados'
+                              : '',
+                          enabledBorder: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(width: 2, color: kColorPrimary),
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(width: 2, color: kColorPrimary),
+                            borderRadius: BorderRadius.circular(25),
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 15),
-                    Text(
-                      'Para enviar los resultados y regresar al menú principal, presiona el boton finalizar',
-                    ),
-                    SizedBox(height: 15),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        backgroundColor: kColorPrimary,
+                      SizedBox(height: 15),
+                      Text(
+                        'Para enviar los resultados y regresar al menú principal, presiona el boton finalizar',
                       ),
-                      onPressed: () {
-                        addGameProgress();
-                        Navigator.pop(dialogContext);
-                        Navigator.pushNamedAndRemoveUntil(
-                            context, '/homepage', ModalRoute.withName('/'));
-                      },
-                      label: Text(
-                        'Finalizar',
-                        style: TextStyle(color: kColorSecondary),
+                      SizedBox(height: 15),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: kColorPrimary,
+                        ),
+                        onPressed: () {
+                          addGameProgress();
+                          Navigator.pop(dialogContext);
+                          Navigator.pushNamedAndRemoveUntil(
+                              context, '/homepage', ModalRoute.withName('/'));
+                        },
+                        label: Text(
+                          'Finalizar',
+                          style: TextStyle(color: kColorSecondary),
+                        ),
+                        icon: Icon(
+                          Icons.undo,
+                          color: kColorSecondary,
+                        ),
                       ),
-                      icon: Icon(
-                        Icons.undo,
-                        color: kColorSecondary,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -1,13 +1,16 @@
 import 'dart:async';
 
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 
 import 'ruleta_painter.dart';
 
 class Ruleta extends StatefulWidget {
+  const Ruleta({super.key});
+
   @override
-  _RuletaState createState() => _RuletaState();
+  State<Ruleta> createState() => _RuletaState();
 }
 
 class _RuletaState extends State<Ruleta> with SingleTickerProviderStateMixin {
@@ -15,6 +18,7 @@ class _RuletaState extends State<Ruleta> with SingleTickerProviderStateMixin {
   late Animation<double> _animation;
   double _currentAngle = 0.0;
   int _segments = 3;
+  final logger = AppLogger();
 
   final List<Color> _colors = [
     Colors.red,
@@ -36,17 +40,6 @@ class _RuletaState extends State<Ruleta> with SingleTickerProviderStateMixin {
     'Premio 6',
     'Premio 7',
     'Premio 8',
-  ];
-
-  final List<String> _imagePaths = [
-    'assets/image1.png',
-    'assets/image2.png',
-    'assets/image3.png',
-    'assets/image4.png',
-    'assets/image5.png',
-    'assets/image6.png',
-    'assets/image7.png',
-    'assets/image8.png',
   ];
 
   late List<Image> _images;
@@ -72,32 +65,16 @@ class _RuletaState extends State<Ruleta> with SingleTickerProviderStateMixin {
         Tween<double>(begin: 0, end: 2 * pi * 4).animate(curvedAnimation);
   }
 
-  Future<void> _loadImages() async {
-    _images = _imagePaths.map((path) => Image.asset(path)).toList();
-    await Future.wait(_images.map((image) => _loadImage(image)));
-    setState(() {});
-  }
-
-  Future<void> _loadImage(Image image) {
-    final Completer<void> completer = Completer();
-    image.image.resolve(const ImageConfiguration()).addListener(
-      ImageStreamListener((ImageInfo info, bool synchronousCall) {
-        completer.complete();
-      }),
-    );
-    return completer.future;
-  }
-
   void _spin() {
-    print('spin ${_controller.isAnimating}');
-    print('spin ${_currentAngle % (2 * pi)}');
+    logger.i('spin ${_controller.isAnimating}');
+    logger.i('spin ${_currentAngle % (2 * pi)}');
     if (_controller.isAnimating) return;
     _controller.forward(from: 0);
   }
 
   void _stop() {
-    print('stop ${_controller.isAnimating}');
-    print('stop ${_currentAngle % (2 * pi)}');
+    logger.i('stop ${_controller.isAnimating}');
+    logger.i('stop ${_currentAngle % (2 * pi)}');
     if (_controller.isAnimating) {
       _controller.stop();
       _showResult();
@@ -110,7 +87,7 @@ class _RuletaState extends State<Ruleta> with SingleTickerProviderStateMixin {
     final int segmentIndex =
         (_segments + (normalizedAngle / segmentAngle).floor()) % _segments;
 
-    print('Segmento: ${_labels[segmentIndex]}');
+    logger.i('Segmento: ${_labels[segmentIndex]}');
     Future.delayed(const Duration(seconds: 2), () {
       _controller.forward(from: 0);
     });
@@ -137,17 +114,6 @@ class _RuletaState extends State<Ruleta> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    if (_images == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Ruleta con Flecha'),
-        ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ruleta Animada'),

@@ -23,7 +23,7 @@ void showBottomSheetForm(BuildContext context,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     CupertinoButton(
-                      child: Text(
+                      child: const Text(
                         'Cancelar',
                       ),
                       onPressed: () {
@@ -38,7 +38,7 @@ void showBottomSheetForm(BuildContext context,
                 child: Center(
                   child: Text(
                     title,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),

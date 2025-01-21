@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cognitiveroulletegame/data/image_dao.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
@@ -10,6 +11,7 @@ import 'package:cognitiveroulletegame/models/saved_image.dart';
 class ImageCacheService with ChangeNotifier {
   ValueNotifier<double> progressNotifier = ValueNotifier<double>(0);
   final ImageDao _imageDao = ImageDao();
+  final logger = AppLogger();
   List<SavedImage> _cachedImage = [];
 
   List<SavedImage> get cachedImage => _cachedImage;
@@ -27,9 +29,10 @@ class ImageCacheService with ChangeNotifier {
 
       await downloadAndCacheImagesInParallel(result.items, sync: sync);
     } catch (e) {
-      print('Error al obtener los archivos del bucket de Firebase Storage: $e');
+      logger.e(
+          'Error al obtener los archivos del bucket de Firebase Storage: $e');
     }
-    print('Termino la descarga');
+    logger.i('Termino la descarga');
   }
 
   // Descargar y almacenar una imagen
@@ -47,14 +50,14 @@ class ImageCacheService with ChangeNotifier {
       // Verificar si la imagen ya está almacenada localmente
       if (_cachedImage.contains(savedImage)) {
         if (sync) {
-          print('Sincronizando $imageName en $savePath');
+          logger.i('Sincronizando $imageName en $savePath');
           Dio dio = Dio();
           await dio.download(url, savePath);
         }
         return;
       }
 
-      print('Descargando $imageName en $savePath');
+      logger.i('Descargando $imageName en $savePath');
       // if (_cachedImages.containsKey(url)) return;
 
       // Descargar el enlace de Firebase
@@ -71,7 +74,7 @@ class ImageCacheService with ChangeNotifier {
       _cachedImage = await _imageDao.getAllImages();
       notifyListeners();
     } catch (e) {
-      print('Error al descargar imagen: $e');
+      logger.e('Error al descargar imagen: $e');
     }
   }
 

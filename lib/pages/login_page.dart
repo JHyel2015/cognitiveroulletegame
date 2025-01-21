@@ -6,6 +6,7 @@ import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
 import 'package:cognitiveroulletegame/data/user_notifier.dart';
 import 'package:cognitiveroulletegame/models/player_progress.dart';
 import 'package:cognitiveroulletegame/models/user_data.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:cognitiveroulletegame/widgets/custom_text_form_field.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -32,6 +33,7 @@ class _LoginPageState extends State<LoginPage> {
   final userPreferences = UserPreferences();
 
   User? _user;
+  final logger = AppLogger();
 
   void signUserIn() async {
     String? storedUID = userPreferences.storedUID;
@@ -85,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
         );
         userNotifier.addUser(userData);
       }
-      print(_user!.isAnonymous);
+      logger.i(_user!.isAnonymous.toString());
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
 
@@ -123,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
         return null;
       }
 
-      final GoogleSignInAuthentication? googleAuth =
+      final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
@@ -164,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
         );
         userNotifier.addUser(userData);
       }
-      print(_user!.isAnonymous);
+      logger.i(_user!.isAnonymous.toString());
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
 
@@ -183,7 +185,7 @@ class _LoginPageState extends State<LoginPage> {
       listen: false,
     );
 
-    print(storedUID);
+    logger.d(storedUID);
 
     showDialog(
       context: context,
@@ -199,7 +201,7 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pop(context);
 
       User? user = userCredential.user;
-      print(user);
+      logger.d(user.toString());
 
       if (user != null) {
         if (storedUID != user.uid) {
@@ -249,14 +251,14 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 20),
                   Image.asset('assets/splash.gif', height: 99, width: 99),
                   const SizedBox(height: 20),
-                  Text(
+                  const Text(
                     'Cognitive Game',
                     style: TextStyle(
                       fontSize: 24,
                     ),
                   ),
                   const SizedBox(height: 50),
-                  Text(
+                  const Text(
                     'Bienvenido de vuelta',
                     style: TextStyle(
                       fontSize: 24,
@@ -275,7 +277,7 @@ class _LoginPageState extends State<LoginPage> {
                     obscureText: true,
                   ),
                   const SizedBox(height: 10),
-                  Padding(
+                  const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 25.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -287,7 +289,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 25),
                   TextButton(
                     style: TextButton.styleFrom(
-                      minimumSize: Size.fromHeight(50),
+                      minimumSize: const Size.fromHeight(50),
                       backgroundColor: kColorPrimary,
                     ),
                     onPressed: signUserIn,
@@ -302,7 +304,7 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       OutlinedButton(
                         style: TextButton.styleFrom(
-                          minimumSize: Size.fromHeight(50),
+                          minimumSize: const Size.fromHeight(50),
                           side: BorderSide(width: 1.0, color: kColorPrimary),
                         ),
                         onPressed: signUserWithGoogle,
@@ -312,7 +314,7 @@ class _LoginPageState extends State<LoginPage> {
                             Image.asset('assets/google.png',
                                 height: 25, width: 25),
                             const SizedBox(width: 10),
-                            Text(
+                            const Text(
                               'Ingresar con Google',
                             ),
                           ],
@@ -321,11 +323,11 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 20),
                       OutlinedButton(
                         style: TextButton.styleFrom(
-                          minimumSize: Size.fromHeight(50),
+                          minimumSize: const Size.fromHeight(50),
                           side: BorderSide(width: 1.0, color: kColorPrimary),
                         ),
                         onPressed: signInAnonymously,
-                        child: Text(
+                        child: const Text(
                           'Ingresar como invitado',
                         ),
                       ),
@@ -335,11 +337,11 @@ class _LoginPageState extends State<LoginPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('¿No tienes cuenta?'),
+                      const Text('¿No tienes cuenta?'),
                       const SizedBox(height: 4),
                       CupertinoButton(
                         onPressed: widget.onPressed,
-                        child: Text('Regístrate ahora'),
+                        child: const Text('Regístrate ahora'),
                       ),
                     ],
                   ),

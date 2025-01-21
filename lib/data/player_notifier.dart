@@ -1,22 +1,16 @@
 import 'package:cognitiveroulletegame/data/colors_game_dao.dart';
-import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
-import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cognitiveroulletegame/data/player_dao.dart';
 import 'package:cognitiveroulletegame/data/player_service.dart';
 import 'package:cognitiveroulletegame/models/player_data.dart';
 import 'package:cognitiveroulletegame/services/sync_service.dart';
-import 'package:provider/provider.dart';
 
 class PlayerNotifier extends ChangeNotifier {
   final PlayerDao _playerDao = PlayerDao();
   final ColorsGameDao _colorsGameDao = ColorsGameDao();
-  final PlayerProgressNotifier _playerProgressNotifier =
-      PlayerProgressNotifier();
   final PlayerService _playerService = PlayerService();
   final SyncService _syncService = SyncService();
-  final UserPreferences _userPreferences = UserPreferences();
   List<PlayerData> _players = [];
   PlayerData? _selectedProfile;
 

@@ -2,7 +2,7 @@ import 'package:cognitiveroulletegame/constans.dart';
 import 'package:flutter/material.dart';
 
 class LevelsPage extends StatefulWidget {
-  LevelsPage({Key? key}) : super(key: key);
+  const LevelsPage({super.key});
 
   @override
   State<LevelsPage> createState() => _LevelsPageState();
@@ -23,7 +23,7 @@ class _LevelsPageState extends State<LevelsPage> {
           ),
           Column(
             children: [
-              Center(
+              const Center(
                 child: Text('Hola'),
               ),
               IconButton(

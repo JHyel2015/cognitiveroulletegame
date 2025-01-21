@@ -17,6 +17,7 @@ import 'package:cognitiveroulletegame/models/game.dart';
 import 'package:cognitiveroulletegame/models/colors_game.dart';
 import 'package:cognitiveroulletegame/models/user_data.dart';
 import 'package:cognitiveroulletegame/models/player_data.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 
 class SyncService {
@@ -33,6 +34,7 @@ class SyncService {
   final ColorsGameService colorsGameService = ColorsGameService();
   final PlayerDao playerDao = PlayerDao();
   final PlayerService playerService = PlayerService();
+  final logger = AppLogger();
 
   Future<void> syncLevelData() async {
     try {
@@ -95,7 +97,7 @@ class SyncService {
 
       // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
     } catch (e) {
-      print('Level Error en la sincronización: $e');
+      logger.e('Level Error en la sincronización: $e');
     }
   }
 
@@ -171,7 +173,7 @@ class SyncService {
 
       // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
     } catch (e) {
-      print('PlayerProgress Error en la sincronización: $e');
+      logger.e('PlayerProgress Error en la sincronización: $e');
     }
   }
 
@@ -234,7 +236,7 @@ class SyncService {
 
       // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
     } catch (e) {
-      print('Game Error en la sincronización: $e');
+      logger.e('Game Error en la sincronización: $e');
     }
   }
 
@@ -303,7 +305,7 @@ class SyncService {
 
       // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
     } catch (e) {
-      print('ColorsGame Error en la sincronización: $e');
+      logger.e('ColorsGame Error en la sincronización: $e');
     }
   }
 
@@ -339,19 +341,14 @@ class SyncService {
       // Verificar si el elemento ya existe en SQLite
       var localUserData = await userDao.getUserByUID(itemId!);
 
-      if (localUserData != null) {
-        // Actualizar el elemento en SQLite si ya existe
-        if (firestoreUser?.timestamp.compareTo(localUserData.timestamp) == 1) {
-          await userDao.updateUser(firestoreUser!);
-        }
-      } else {
-        // Agregar el elemento a SQLite si no existe
-        await userDao.insert(firestoreUser!);
+      // Actualizar el elemento en SQLite si ya existe
+      if (firestoreUser?.timestamp.compareTo(localUserData.timestamp) == 1) {
+        await userDao.updateUser(firestoreUser!);
       }
 
       // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
     } catch (e) {
-      print('Error en la sincronización: $e');
+      logger.e('Error en la sincronización: $e');
     }
   }
 
@@ -416,7 +413,7 @@ class SyncService {
 
       // Puedes implementar lógica adicional para manejar eliminaciones o conflictos.
     } catch (e) {
-      print('Player Error en la sincronización: $e');
+      logger.e('Player Error en la sincronización: $e');
     }
   }
 }

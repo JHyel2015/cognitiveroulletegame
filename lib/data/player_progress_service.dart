@@ -121,9 +121,18 @@ class PlayerProgressService {
   }
 
   Future<void> clearData() async {
-    var snapshots = await _collectionReference.get();
-    for (var doc in snapshots.docs) {
-      await doc.reference.delete();
+    _user = _auth.currentUser;
+    if (_user != null && !_user!.isAnonymous) {
+      QuerySnapshot querySnapshot =
+          await _collectionReference.doc(_user?.uid).collection(_table).get();
+
+      // Recorre los documentos y elimínalos uno por uno
+      for (QueryDocumentSnapshot doc in querySnapshot.docs) {
+        await doc.reference.delete();
+      }
+    } else {
+      // Usuario autenticado de forma anónima, no permitir la carga de datos
+      logger.i('Usuario invitado, no puede borrar datos');
     }
   }
 }

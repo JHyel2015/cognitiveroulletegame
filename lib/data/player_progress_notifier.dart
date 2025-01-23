@@ -53,7 +53,7 @@ class PlayerProgressNotifier extends ChangeNotifier {
     return _playerProgresss.where((item) => item.userId == playerId).toList();
   }
 
-  // delete playerProgress
+  // delete playerProgress item
   Future<void> deletePlayerProgressItem(PlayerProgress playerProgress) async {
     await _playerProgressDao.deletePlayerProgress(playerProgress.id!);
     await _playerProgressService.deleteData(playerProgress);
@@ -61,10 +61,18 @@ class PlayerProgressNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  // delete playerProgress
+  // delete playerProgress by player
   Future<void> deletePlayerProgressByPlayerID(String playerUID) async {
     await _playerProgressDao.deletePlayerProgressByPlayerID(playerUID);
     await _playerProgressService.deleteDataByPlayerUID(playerUID);
+    _playerProgresss = await _playerProgressDao.getAllPlayerProgresss();
+    notifyListeners();
+  }
+
+  // delete playerProgress by User
+  Future<void> deletePlayerProgressByUser() async {
+    await _playerProgressDao.clearData();
+    await _playerProgressService.clearData();
     _playerProgresss = await _playerProgressDao.getAllPlayerProgresss();
     notifyListeners();
   }

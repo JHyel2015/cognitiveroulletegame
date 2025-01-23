@@ -246,6 +246,9 @@ class _PlayersPageState extends State<PlayersPage> {
     await playerNotifier.deletePlayer(playerData);
     await playerProgressNotifier
         .deletePlayerProgressByPlayerID(playerData.uid!);
+    if (playerNotifier.players.isEmpty) {
+      playerProgressNotifier.deletePlayerProgressByUser();
+    }
     snackbarService.showSnackbar("Jugador $playerData eliminado con éxito",
         backgroundColor: kColorPrimary);
   }

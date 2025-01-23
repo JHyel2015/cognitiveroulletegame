@@ -111,10 +111,17 @@ class _HistorialPageState extends State<HistorialPage> {
                   PlayerData player;
                   String? playerName;
                   if (playerProgress.userId != '') {
-                    player = playerNotifier.players
-                        .where((item) => item.uid == playerProgress.userId)
-                        .first;
-                    playerName = player.name;
+                    player = playerNotifier.players.singleWhere(
+                      (item) => item.uid == playerProgress.userId,
+                      orElse: () => PlayerData(
+                          name: '',
+                          age: 0,
+                          userId: '',
+                          timestamp: DateTime.now()),
+                    );
+                    if (player.name != '') {
+                      playerName = player.name;
+                    }
                   }
                   Game game;
                   game = gameNotifier.games

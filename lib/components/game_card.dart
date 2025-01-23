@@ -4,14 +4,14 @@ import 'package:cognitiveroulletegame/constans.dart';
 
 class GameCard extends StatelessWidget {
   final Color color;
-  final String name;
+  final String? name;
   final String image;
   final Function() onPressed;
 
   const GameCard({
     super.key,
     required this.color,
-    required this.name,
+    this.name,
     required this.image,
     required this.onPressed,
   });
@@ -30,6 +30,10 @@ class GameCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Text(
+            name ?? '',
+            style: TextStyle(fontSize: 25, color: kColorSecondary),
+          ),
           InkWell(
             onTap: onPressed,
             child: Container(
@@ -42,13 +46,6 @@ class GameCard extends StatelessWidget {
                 ),
                 color: color,
                 borderRadius: BorderRadius.circular(25),
-              ),
-              child: Center(
-                child: Stack(
-                  children: [
-                    Text(name),
-                  ],
-                ),
               ),
             ),
           ),

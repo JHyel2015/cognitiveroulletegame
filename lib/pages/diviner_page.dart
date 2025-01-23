@@ -22,6 +22,7 @@ class _DivinerPageState extends State<DivinerPage> {
   @override
   void initState() {
     super.initState();
+    _speak();
   }
 
   @override
@@ -84,7 +85,7 @@ class _DivinerPageState extends State<DivinerPage> {
                         color: Colors.amber,
                         name: gameNotifier.games[index].name,
                         image:
-                            'assets/portada-${gameNotifier.games[index].name.toLowerCase()}.jpeg',
+                            'assets/portada-${gameNotifier.games[index].name.toLowerCase()}.png',
                         onPressed: () {
                           Navigator.push(
                             context,

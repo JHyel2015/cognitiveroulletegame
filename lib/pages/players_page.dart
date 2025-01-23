@@ -231,6 +231,7 @@ class _PlayersPageState extends State<PlayersPage> {
       playerAgeController.clear();
       snackbarService.showSnackbar("Jugador $key creado exitosamente",
           backgroundColor: kColorPrimary);
+      _speak(textToSpeak: "Jugador $key creado exitosamente");
     }
   }
 
@@ -468,6 +469,10 @@ class _PlayersPageState extends State<PlayersPage> {
                           backgroundColor: kColorPrimary,
                         ),
                         onPressed: () {
+                          _speak(
+                            textToSpeak:
+                                'Agregar jugador. Ingresa el nombre y edad del jugador.',
+                          );
                           openBox();
                         },
                         label: Text(
@@ -513,17 +518,27 @@ class _PlayersPageState extends State<PlayersPage> {
                         style: TextButton.styleFrom(
                           backgroundColor: kColorPrimary,
                         ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              // builder: (context) => LevelsPage(),
-                              builder: (context) => HistorialPage(
-                                playerName: '',
-                              ),
-                            ),
-                          );
-                        },
+                        onPressed: players.isEmpty
+                            ? () {
+                                snackbarService.showSnackbar(
+                                  'No existen jugadores todavía',
+                                );
+                                _speak(
+                                  textToSpeak:
+                                      'No existen jugadores todavía, puedes crear uno en el botón agregar jugador.',
+                                );
+                              }
+                            : () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    // builder: (context) => LevelsPage(),
+                                    builder: (context) => HistorialPage(
+                                      playerName: '',
+                                    ),
+                                  ),
+                                );
+                              },
                         label: Text(
                           'Historial',
                           style: TextStyle(color: kColorSecondary),

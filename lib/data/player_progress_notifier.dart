@@ -45,7 +45,7 @@ class PlayerProgressNotifier extends ChangeNotifier {
 
   // get playerProgresss list
   List<PlayerProgress> getAllPlayerProgresssList() {
-    return _playerProgresss;
+    return _playerProgresss.where((item) => item.userId != '').toList();
   }
 
   // get playerProgresss list

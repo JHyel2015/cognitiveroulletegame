@@ -127,6 +127,7 @@ class _CounterGamePageState extends State<CounterGamePage>
 
   bool stopAnimation = false;
   List<int> cardNumbers = [-1, -1, -1];
+  bool _isDisposed = false;
 
   Future<void> init() async {
     _secondaryApp = Firebase.app('esp32colores');
@@ -174,7 +175,7 @@ class _CounterGamePageState extends State<CounterGamePage>
       (DatabaseEvent event) async {
         setState(() {
           _counter = (event.snapshot.value ?? 0) as int;
-          logger.d(event.snapshot.value.toString());
+          logger.d('$_counter');
           if (_counter > 0) {
             stopAndGenerateNumbers();
             _speak('Escoge entre las cartas el número que contaste');
@@ -279,8 +280,8 @@ class _CounterGamePageState extends State<CounterGamePage>
     addGameProgress();
     _speak(widget.textToSpeak);
     _stopwatch.start();
-    if (_exited) {
-      Future.delayed(Duration(seconds: _time), () {
+    Future.delayed(Duration(seconds: _time), () {
+      if (!_isDisposed) {
         _animationController.stop();
         _animationController2.stop();
         logger.i('Se cumplio el tiempo');
@@ -289,12 +290,13 @@ class _CounterGamePageState extends State<CounterGamePage>
         }
         _isWakelockEnabled = false;
         openBox();
-      });
-    }
+      }
+    });
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _timer?.cancel(); // Cancelar el temporizador al salir de la pantalla
     _stopwatch.stop();
     _animationController.dispose();
@@ -311,7 +313,7 @@ class _CounterGamePageState extends State<CounterGamePage>
     setState(() {
       stopAnimation = true;
     });
-    _animationController2.reset();
+    _animationController2.forward(from: 0);
   }
 
   void getRandomInt() async {
@@ -350,14 +352,14 @@ class _CounterGamePageState extends State<CounterGamePage>
       _fallos++;
     }
     await _counterRef.set(0);
-    if (_exited) {
-      Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!_isDisposed) {
         stopAnimation = false;
         _animationController2.forward(from: 0);
         cardNumbers = [-1, -1, -1];
         _visible = false;
-      });
-    }
+      }
+    });
   }
 
   @override
@@ -410,6 +412,20 @@ class _CounterGamePageState extends State<CounterGamePage>
           body: Stack(
             alignment: AlignmentDirectional.center,
             children: [
+              Positioned(
+                top: 60,
+                left: 10,
+                child: Container(
+                  padding: const EdgeInsets.all(10.0),
+                  margin: EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: Colors.blueAccent),
+                  ),
+                  child: Text(
+                      '${Duration(seconds: _stopwatch.elapsed.inSeconds).toString().split('.')[0].substring(2)}'),
+                ),
+              ),
               Positioned(
                 top: 0,
                 child: Container(
@@ -573,107 +589,110 @@ class _CounterGamePageState extends State<CounterGamePage>
                   borderRadius: BorderRadius.all(Radius.circular(10))),
               child: Container(
                 padding: EdgeInsets.all(15),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Fin del juego',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 15),
-                    StarRating(attempts: _intentos, correctAnswers: _aciertos),
-                    SizedBox(height: 15),
-                    Text(
-                      'Resultados',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 15),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Chip(
-                              //avatar: Icon(Icons.schedule),
-                              label: Text(
-                                  'Tiempo ${Duration(seconds: _time).toString().split('.')[0].substring(2)}'),
-                            ),
-                            Chip(
-                              //avatar: Icon(Icons.sunny),
-                              label: Text('Aciertos ${_aciertos.toString()}'),
-                            ),
-                          ],
-                        ),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Chip(
-                              //avatar: Icon(Icons.sunny),
-                              label: Text('Intentos ${_intentos.toString()}'),
-                            ),
-                            Chip(
-                              //avatar: Icon(Icons.sunny),
-                              label: Text('Fallos ${_fallos.toString()}'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 15),
-                    Text(
-                      'Comentarios',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 15),
-                    TextFormField(
-                      controller: commentController,
-                      maxLines: 6,
-                      readOnly: userPreferences.isAnonymous,
-                      decoration: InputDecoration(
-                        hintText: userPreferences.isAnonymous
-                            ? 'Usuario invitado no puede ingresar comentarios ni guardar resultados'
-                            : '',
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(width: 2, color: kColorPrimary),
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(width: 2, color: kColorPrimary),
-                          borderRadius: BorderRadius.circular(25),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Fin del juego',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 15),
+                      StarRating(
+                          attempts: _intentos, correctAnswers: _aciertos),
+                      SizedBox(height: 15),
+                      Text(
+                        'Resultados',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 15),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Chip(
+                                //avatar: Icon(Icons.schedule),
+                                label: Text(
+                                    'Tiempo ${Duration(seconds: _time).toString().split('.')[0].substring(2)}'),
+                              ),
+                              Chip(
+                                //avatar: Icon(Icons.sunny),
+                                label: Text('Aciertos ${_aciertos.toString()}'),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Chip(
+                                //avatar: Icon(Icons.sunny),
+                                label: Text('Intentos ${_intentos.toString()}'),
+                              ),
+                              Chip(
+                                //avatar: Icon(Icons.sunny),
+                                label: Text('Fallos ${_fallos.toString()}'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 15),
+                      Text(
+                        'Comentarios',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 15),
+                      TextFormField(
+                        controller: commentController,
+                        maxLines: 6,
+                        readOnly: userPreferences.isAnonymous,
+                        decoration: InputDecoration(
+                          hintText: userPreferences.isAnonymous
+                              ? 'Usuario invitado no puede ingresar comentarios ni guardar resultados'
+                              : '',
+                          enabledBorder: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(width: 2, color: kColorPrimary),
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(width: 2, color: kColorPrimary),
+                            borderRadius: BorderRadius.circular(25),
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 15),
-                    Text(
-                      'Para enviar los resultados y regresar al menú principal, presiona el boton finalizar',
-                    ),
-                    SizedBox(height: 15),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        backgroundColor: kColorPrimary,
+                      SizedBox(height: 15),
+                      Text(
+                        'Para enviar los resultados y regresar al menú principal, presiona el boton finalizar',
                       ),
-                      onPressed: () {
-                        addGameProgress();
-                        Navigator.pop(dialogContext);
-                        Navigator.pushNamedAndRemoveUntil(
-                            context, '/homepage', ModalRoute.withName('/'));
-                      },
-                      label: Text(
-                        'Finalizar',
-                        style: TextStyle(color: kColorSecondary),
-                      ),
-                      icon: Icon(
-                        Icons.undo,
-                        color: kColorSecondary,
-                      ),
-                    )
-                  ],
+                      SizedBox(height: 15),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: kColorPrimary,
+                        ),
+                        onPressed: () {
+                          addGameProgress();
+                          Navigator.pop(dialogContext);
+                          Navigator.pushNamedAndRemoveUntil(
+                              context, '/homepage', ModalRoute.withName('/'));
+                        },
+                        label: Text(
+                          'Finalizar',
+                          style: TextStyle(color: kColorSecondary),
+                        ),
+                        icon: Icon(
+                          Icons.undo,
+                          color: kColorSecondary,
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               ),
             ),

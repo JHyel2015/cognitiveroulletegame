@@ -22,7 +22,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isDownloading = false;
 
   final String _textToSpeak =
-      'En esta pantalla se puede ajustar el tiempo de juego y descargar los recursos.';
+      'En esta pantalla se puede configurar el tiempo de juego y descargar los recursos.';
 
   final Map<String, int> _timeMap = {
     '15 seg': 15,
@@ -89,7 +89,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _speak();
+    _speak(textToSpeak: 'Estás en la pantalla Ajustes. $_textToSpeak');
     _timeController.text = _timeMap.keys
         .toList()[_timeMap.values.toList().indexOf(userPreferences.time)];
   }

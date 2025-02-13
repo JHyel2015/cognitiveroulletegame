@@ -333,7 +333,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     _isWakelockEnabled = true;
 
     _time = userPreferences.time;
-    int time = _time >= 60 ? 15 : _time;
+    int time = _time >= 60 ? 20 : _time;
 
     _statusListener = (AnimationStatus status) {
       if (status == AnimationStatus.completed) {

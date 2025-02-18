@@ -77,12 +77,12 @@ class PlayerNotifier extends ChangeNotifier {
     return _players;
   }
 
-  void sync() async {
+  Future<void> sync() async {
     await _syncService.syncPlayerData();
     notifyListeners();
   }
 
-  void clearData() async {
+  Future<void> clearData() async {
     await _playerDao.clearData();
 
     notifyListeners();

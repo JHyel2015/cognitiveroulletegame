@@ -6,7 +6,6 @@ import 'package:cognitiveroulletegame/services/speaker_service.dart';
 import 'package:cognitiveroulletegame/constans.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 
 import 'package:flutter/material.dart';
 

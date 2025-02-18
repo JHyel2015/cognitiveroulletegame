@@ -120,7 +120,7 @@ class DatabaseHelper {
     ''');
   }
 
-  void _onUpgrade(Database db, int oldVersion, int newVersion) async {
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < newVersion) {}
   }
 

@@ -316,7 +316,7 @@ class _CounterGamePageState extends State<CounterGamePage>
     _animationController2.forward(from: 0);
   }
 
-  void getRandomInt() async {
+  Future<void> getRandomInt() async {
     final random = Random();
     int number = random.nextInt(_segments);
     if (_ledOn) {
@@ -340,7 +340,7 @@ class _CounterGamePageState extends State<CounterGamePage>
     }
   }
 
-  void _showResult() async {
+  Future<void> _showResult() async {
     _visible = true;
     setState(() {});
     _intentos++;
@@ -422,8 +422,10 @@ class _CounterGamePageState extends State<CounterGamePage>
                     borderRadius: BorderRadius.circular(25),
                     border: Border.all(color: Colors.blueAccent),
                   ),
-                  child: Text(
-                      '${Duration(seconds: _stopwatch.elapsed.inSeconds).toString().split('.')[0].substring(2)}'),
+                  child: Text(Duration(seconds: _stopwatch.elapsed.inSeconds)
+                      .toString()
+                      .split('.')[0]
+                      .substring(2)),
                 ),
               ),
               Positioned(
@@ -702,7 +704,7 @@ class _CounterGamePageState extends State<CounterGamePage>
     );
   }
 
-  void addGameProgress() async {
+  Future<void> addGameProgress() async {
     final playerProgressNotifier = Provider.of<PlayerProgressNotifier>(
       context,
       listen: false,

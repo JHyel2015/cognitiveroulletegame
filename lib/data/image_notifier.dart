@@ -36,19 +36,19 @@ class ImageNotifier extends ChangeNotifier {
   }
 
   // delete image
-  void deleteImageItem(SavedImage image) async {
+  Future<void> deleteImageItem(SavedImage image) async {
     await _imageDao.deleteImage(image.name);
     _images = await _imageDao.getAllImages();
     notifyListeners();
   }
 
-  void clearData() async {
+  Future<void> clearData() async {
     await _imageDao.clearData();
 
     notifyListeners();
   }
 
-  void sync() async {
+  Future<void> sync() async {
     notifyListeners();
   }
 }

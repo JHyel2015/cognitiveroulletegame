@@ -59,7 +59,7 @@ class ColorsGameNotifier extends ChangeNotifier {
   }
 
   // delete colorsGame
-  void deleteColorsGameItem(ColorsGame colorsGame) async {
+  Future<void> deleteColorsGameItem(ColorsGame colorsGame) async {
     await _colorsGameDao.deleteColorsGame(colorsGame.id!);
     await _colorsGameService.deleteData(colorsGame);
     _colorsGames = await _colorsGameDao.getAllColorsGames();
@@ -74,13 +74,13 @@ class ColorsGameNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  void clearData() async {
+  Future<void> clearData() async {
     await _colorsGameDao.clearData();
 
     notifyListeners();
   }
 
-  void sync() async {
+  Future<void> sync() async {
     await _syncService.syncColorsGameData();
     notifyListeners();
   }

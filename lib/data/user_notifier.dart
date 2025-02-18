@@ -49,12 +49,12 @@ class UserNotifier extends ChangeNotifier {
     return _users;
   }
 
-  // void sync() async {
+  // Future<void> sync() async {
   //   await _syncService.syncUserData();
   //   notifyListeners();
   // }
 
-  void clearData() async {
+  Future<void> clearData() async {
     await _userDao.clearData();
 
     notifyListeners();

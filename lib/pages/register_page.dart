@@ -33,7 +33,7 @@ class _LoginPageState extends State<RegisterPage> {
 
   User? _user;
 
-  void signUserUp() async {
+  Future<void> signUserUp() async {
     String? storedUID = userPreferences.storedUID;
     final userNotifier = Provider.of<UserNotifier>(context, listen: false);
     final colorsGameNotifier = Provider.of<ColorsGameNotifier>(
@@ -104,7 +104,7 @@ class _LoginPageState extends State<RegisterPage> {
     }
   }
 
-  void signUserWithGoogle() async {
+  Future<void> signUserWithGoogle() async {
     String? storedUID = userPreferences.storedUID;
     final userNotifier = Provider.of<UserNotifier>(context, listen: false);
     final colorsGameNotifier = Provider.of<ColorsGameNotifier>(
@@ -138,8 +138,8 @@ class _LoginPageState extends State<RegisterPage> {
           await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth?.accessToken,
-        idToken: googleAuth?.idToken,
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
 
       UserCredential userCredential =
@@ -177,7 +177,7 @@ class _LoginPageState extends State<RegisterPage> {
     }
   }
 
-  void signInAnonymously() async {
+  Future<void> signInAnonymously() async {
     String? storedUID = userPreferences.storedUID;
     final colorsGameNotifier = Provider.of<ColorsGameNotifier>(
       context,

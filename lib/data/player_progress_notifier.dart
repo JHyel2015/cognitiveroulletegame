@@ -77,13 +77,13 @@ class PlayerProgressNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  void clearData() async {
+  Future<void> clearData() async {
     await _playerProgressDao.clearData();
 
     notifyListeners();
   }
 
-  void sync() async {
+  Future<void> sync() async {
     await _syncService.syncPlayerProgressData();
     notifyListeners();
   }

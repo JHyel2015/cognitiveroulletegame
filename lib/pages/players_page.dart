@@ -11,6 +11,7 @@ import 'package:cognitiveroulletegame/pages/home_page.dart';
 import 'package:cognitiveroulletegame/pages/settings_page.dart';
 import 'package:cognitiveroulletegame/services/snackbar_services.dart';
 import 'package:cognitiveroulletegame/services/speaker_service.dart';
+import 'package:cognitiveroulletegame/services/sync_service.dart';
 import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +44,13 @@ class _PlayersPageState extends State<PlayersPage> {
     super.initState();
     _speak(textToSpeak: _textToSpeak);
     _getCurrentUser();
+
+    SyncService syncService = SyncService();
+    syncService.syncLevelData();
+    syncService.syncGameData();
+    syncService.syncColorsGameData();
+    syncService.syncPlayerData();
+    syncService.syncPlayerProgressData();
   }
 
   @override
@@ -78,6 +86,10 @@ class _PlayersPageState extends State<PlayersPage> {
       listen: false,
     );
     final userNotifier = Provider.of<UserNotifier>(context, listen: false);
+    final playerNotifier = Provider.of<PlayerNotifier>(
+      context,
+      listen: false,
+    );
 
     if (_user != null && _user!.isAnonymous) {
       await _user?.delete();
@@ -88,6 +100,7 @@ class _PlayersPageState extends State<PlayersPage> {
     colorsGameNotifier.clearData();
     playerProgressNotifier.clearData();
     userNotifier.clearData();
+    playerNotifier.clearData();
 
     Navigator.push(
       context,
@@ -214,7 +227,7 @@ class _PlayersPageState extends State<PlayersPage> {
     );
   }
 
-  void addPlayer() async {
+  Future<void> addPlayer() async {
     final playerNotifier = Provider.of<PlayerNotifier>(context, listen: false);
     setState(() {});
     PlayerData newPlayerData = PlayerData(
@@ -235,7 +248,7 @@ class _PlayersPageState extends State<PlayersPage> {
     }
   }
 
-  void deletePlayer(String name) async {
+  Future<void> deletePlayer(String name) async {
     final playerNotifier = Provider.of<PlayerNotifier>(context, listen: false);
     final colorsGameNotifier =
         Provider.of<ColorsGameNotifier>(context, listen: false);
@@ -384,86 +397,130 @@ class _PlayersPageState extends State<PlayersPage> {
           ),
           body: Stack(
             children: [
+              Positioned(
+                left: 10,
+                top: 10,
+                child: Image.asset(
+                  'assets/EPN.png',
+                  height: 150,
+                  width: 150,
+                ),
+              ),
+              Positioned(
+                right: 10,
+                top: 10,
+                child: Image.asset(
+                  'assets/FIS.png',
+                  height: 150,
+                  width: 150,
+                ),
+              ),
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ...players.map(
-                      (item) {
-                        String key = item.name;
-                        return Dismissible(
-                          key: Key(key),
-                          direction: DismissDirection.endToStart,
-                          confirmDismiss: (direction) async {
-                            return await _showConfirmationDialog(context, key);
-                          },
-                          onDismissed: (direction) {
-                            // Elimina el item y cierra el diálogo
-                            setState(() {});
-                            deletePlayer(item.name);
-                            snackbarService
-                                .showSnackbar("Jugador $key eliminado");
-                          },
-                          background: Container(
-                            color: Colors.red, // Color de fondo al deslizar
-                            alignment:
-                                Alignment.centerRight, // Alineado a la derecha
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: const Icon(Icons.delete,
-                                color: Colors.white,
-                                size: 30), // Icono de eliminar
-                          ),
-                          child: Container(
-                            width: width * .75,
-                            margin: EdgeInsets.only(bottom: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[50], // Otro fondo de ListTile
-                              border:
-                                  Border.all(color: kColorPrimary, width: 2),
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey
-                                      .withOpacity(0.5), // Color de la sombra
-                                  spreadRadius: 2, // Extensión de la sombra
-                                  blurRadius: 5, // Difuminado de la sombra
-                                  offset: const Offset(
-                                      0, 3), // Dirección de la sombra
+                    if (players.isNotEmpty)
+                      SizedBox(
+                        height: 300,
+                        child: Center(
+                          child: SingleChildScrollView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                ...players.map(
+                                  (item) {
+                                    String key = item.name;
+                                    return Dismissible(
+                                      key: Key(key),
+                                      direction: DismissDirection.endToStart,
+                                      confirmDismiss: (direction) async {
+                                        return await _showConfirmationDialog(
+                                            context, key);
+                                      },
+                                      onDismissed: (direction) {
+                                        // Elimina el item y cierra el diálogo
+                                        setState(() {});
+                                        deletePlayer(item.name);
+                                        snackbarService.showSnackbar(
+                                            "Jugador $key eliminado");
+                                      },
+                                      background: Container(
+                                        color: Colors
+                                            .red, // Color de fondo al deslizar
+                                        alignment: Alignment
+                                            .centerRight, // Alineado a la derecha
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 20),
+                                        child: const Icon(Icons.delete,
+                                            color: Colors.white,
+                                            size: 30), // Icono de eliminar
+                                      ),
+                                      child: Container(
+                                        width: width * .75,
+                                        margin:
+                                            const EdgeInsets.only(bottom: 5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue[
+                                              50], // Otro fondo de ListTile
+                                          border: Border.all(
+                                              color: kColorPrimary, width: 2),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.grey.withOpacity(
+                                                  0.5), // Color de la sombra
+                                              spreadRadius:
+                                                  2, // Extensión de la sombra
+                                              blurRadius:
+                                                  5, // Difuminado de la sombra
+                                              offset: const Offset(0,
+                                                  3), // Dirección de la sombra
+                                            ),
+                                          ],
+                                        ),
+                                        child: ListTile(
+                                          title: Text(
+                                            key,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: kColorPrimary,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          trailing: IconButton(
+                                            icon: const Icon(Icons.delete,
+                                                color: Colors.red),
+                                            onPressed: () {
+                                              // Muestra el diálogo de confirmación
+                                              _showDeleteConfirmationDialog(
+                                                  context, key);
+                                            },
+                                          ),
+                                          onTap: () {
+                                            playerNotifier.selectProfile(item);
+                                            userPreferences.playerName =
+                                                item.name;
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const HomePage(),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
-                            child: ListTile(
-                              title: Text(
-                                key,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: kColorPrimary,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              trailing: IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  // Muestra el diálogo de confirmación
-                                  _showDeleteConfirmationDialog(context, key);
-                                },
-                              ),
-                              onTap: () {
-                                playerNotifier.selectProfile(item);
-                                userPreferences.playerName = item.name;
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const HomePage(),
-                                  ),
-                                );
-                              },
-                            ),
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      ),
                     const SizedBox(height: 10),
                     SizedBox(
                       width: width * .40,
@@ -553,24 +610,6 @@ class _PlayersPageState extends State<PlayersPage> {
                       ),
                     ),
                   ],
-                ),
-              ),
-              Positioned(
-                left: 10,
-                top: 10,
-                child: Image.asset(
-                  'assets/EPN.png',
-                  height: 150,
-                  width: 150,
-                ),
-              ),
-              Positioned(
-                right: 10,
-                top: 10,
-                child: Image.asset(
-                  'assets/FIS.png',
-                  height: 150,
-                  width: 150,
                 ),
               ),
               Positioned(

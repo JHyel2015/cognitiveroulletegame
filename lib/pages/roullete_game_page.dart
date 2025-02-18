@@ -366,7 +366,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     // Configurar un TweenSequence para saltos de 60 grados
     _animation = TweenSequence<double>(
       List.generate(
-        6,
+        12,
         (index) => TweenSequenceItem(
           tween: Tween<double>(
             begin: -(pi / 2) + (index * (pi / 3)),
@@ -404,7 +404,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     _isWakelockEnabled = false;
   }
 
-  void getRandomInt() async {
+  Future<void> getRandomInt() async {
     final random = Random();
     int number = -1;
     do {
@@ -441,8 +441,10 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     }
   }
 
-  void _showResult() async {
-    final double normalizedAngle = ((_currentAngle + (2 * pi / 3)) % (2 * pi));
+  Future<void> _showResult() async {
+    final double normalizedAngle =
+        (((_currentAngle) + (2 * pi / 3)) % (2 * pi));
+    print(_currentAngle);
     final double segmentAngle = (2 * pi / _segments);
     _segmentIndex =
         (_segments + (normalizedAngle / segmentAngle).floor()) % _segments;
@@ -459,7 +461,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
       // await _playSound('sounds/fail.mp3');
       _fallos++;
     }
-    addColorsGame(_colorList[_randomNum], _colorList[_segmentIndex],
+    addColorsGame(_colorList[_segmentIndex], _colorList[_randomNum],
         _randomNum == _segmentIndex);
     if (!_exited) {
       Future.delayed(const Duration(seconds: 2), () {
@@ -577,8 +579,10 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
                     borderRadius: BorderRadius.circular(25),
                     border: Border.all(color: Colors.blueAccent),
                   ),
-                  child: Text(
-                      '${Duration(seconds: _stopwatch.elapsed.inSeconds).toString().split('.')[0].substring(2)}'),
+                  child: Text(Duration(seconds: _stopwatch.elapsed.inSeconds)
+                      .toString()
+                      .split('.')[0]
+                      .substring(2)),
                 ),
               ),
               Positioned(
@@ -633,7 +637,12 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
                           ),
                         ),
                         Text(
-                          '${Duration(seconds: 15 - (_animationController.value * 15).toInt()).toString().split('.')[0].substring(2)}',
+                          Duration(
+                                  seconds: 15 -
+                                      (_animationController.value * 15).toInt())
+                              .toString()
+                              .split('.')[0]
+                              .substring(2),
                         ),
                       ],
                     ),
@@ -843,7 +852,7 @@ class _RoulleteGamePageState extends State<RoulleteGamePage>
     );
   }
 
-  void addGameProgress() async {
+  Future<void> addGameProgress() async {
     final playerProgressNotifier = Provider.of<PlayerProgressNotifier>(
       context,
       listen: false,

@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cognitiveroulletegame/models/level.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
 
 class LevelService {
   static const _table = 'levels';
   final CollectionReference _collectionReference =
       FirebaseFirestore.instance.collection(_table);
+  final logger = AppLogger();
 
   // FireStore
   Future<void> addData(Level level) async {
@@ -39,7 +41,7 @@ class LevelService {
         return null;
       }
     } catch (e) {
-      print('Error al obtener el elemento de Firestore: $e');
+      logger.e('Error al obtener el elemento de Firestore: $e');
       return null;
     }
   }

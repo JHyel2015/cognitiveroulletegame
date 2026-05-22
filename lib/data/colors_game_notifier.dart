@@ -18,15 +18,16 @@ class ColorsGameNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<ColorsGame?> getColorsGameById(int id) async {
+  Future<ColorsGame?> getColorsGameById(String id) async {
     return await _colorsGameDao.getColorsGameByID(id);
   }
 
   Future<void> addColorsGame(ColorsGame colorsGame) async {
-    int id = await _colorsGameDao.insert(colorsGame);
-    colorsGame.gameId = id;
+    String id = await _colorsGameService.addData(colorsGame);
+    colorsGame.id = id;
+    await _colorsGameDao.insert(colorsGame);
     colorsGame.synced = 1;
-    await _colorsGameService.addData(colorsGame);
+    await _colorsGameService.updateData(colorsGame);
     await _colorsGameDao.updateColorsGame(colorsGame);
     _colorsGames = await _colorsGameDao.getAllColorsGames();
     notifyListeners();
@@ -47,22 +48,39 @@ class ColorsGameNotifier extends ChangeNotifier {
     return _colorsGames;
   }
 
+  // get colorsGames list
+  List<ColorsGame> getColorsGameByPlayerProgresss(
+      String playerId, String playerProgressId) {
+    return _colorsGames
+        .where((item) =>
+            item.userId == playerId &&
+            item.playerProgressId == playerProgressId)
+        .toList();
+  }
+
   // delete colorsGame
-  void deleteColorsGameItem(ColorsGame colorsGame) async {
-    await _colorsGameDao.deleteColorsGame(colorsGame.gameId);
+  Future<void> deleteColorsGameItem(ColorsGame colorsGame) async {
+    await _colorsGameDao.deleteColorsGame(colorsGame.id!);
     await _colorsGameService.deleteData(colorsGame);
     _colorsGames = await _colorsGameDao.getAllColorsGames();
     notifyListeners();
   }
 
-  void clearData() async {
+  // delete colorsGame
+  Future<void> deleteColorsGameByPlayerId(String playerId) async {
+    await _colorsGameDao.deleteColorsGameByPlayerID(playerId);
+    await _colorsGameService.deleteDataByPlayerUID(playerId);
+    _colorsGames = await _colorsGameDao.getAllColorsGames();
+    notifyListeners();
+  }
+
+  Future<void> clearData() async {
     await _colorsGameDao.clearData();
-    await _colorsGameService.clearData();
 
     notifyListeners();
   }
 
-  void sync() async {
+  Future<void> sync() async {
     await _syncService.syncColorsGameData();
     notifyListeners();
   }

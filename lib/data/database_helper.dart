@@ -1,5 +1,4 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:http/http.dart' as http;
 
 class DatabaseHelper {
   static const _databaseName = 'cognitiveroulletegame.db';
@@ -31,14 +30,26 @@ class DatabaseHelper {
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY,
+        uid TEXT,
         displayName TEXT,
         name TEXT,
         email TEXT,
         phoneNumber TEXT,
         photoURL TEXT,
         synced INTEGER DEFAULT 0,
-        timestamp TEXT
+        timestamp TEXT,
+        CONSTRAINT pk_users PRIMARY KEY (uid)
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS players (
+        uid TEXT,
+        userId TEXT,
+        name TEXT,
+        age INTEGER,
+        synced INTEGER DEFAULT 0,
+        timestamp TEXT,
+        CONSTRAINT pk_users PRIMARY KEY (uid)
       )
     ''');
     await db.execute('''
@@ -54,52 +65,73 @@ class DatabaseHelper {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS player_progress (
-        id INTEGER PRIMARY KEY,
-        userId INTEGER,
+        id TEXT,
+        userId TEXT,
+        gameId INTEGER,
         levelId INTEGER,
         score INTEGER,
+        successes INTEGER,
+        failures INTEGER,
+        attempts INTEGER,
+        playedTime TEXT,
+        comment TEXT,
         status TEXT,
         synced INTEGER DEFAULT 0,
-        timestamp TEXT
+        timestamp TEXT,
+        CONSTRAINT pk_progress PRIMARY KEY (id)
       )
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS games (
         id INTEGER PRIMARY KEY,
-        userId INTEGER,
+        userId TEXT,
         levelId INTEGER,
         score INTEGER,
         playedTime TEXT,
         playDate TEXT,
+        name TEXT,
+        description TEXT,
+        instructions TEXT,
+        imageUri TEXT,
         synced INTEGER DEFAULT 0,
         timestamp TEXT
       )
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS colors_games (
+        id TEXT,
+        playerProgressId TEXT,
         gameId INTEGER,
+        userId TEXT,
         selectedColor TEXT,
         correctColor TEXT,
         success BLOB,
         synced INTEGER DEFAULT 0,
-        timestamp TEXT
+        timestamp TEXT,
+        CONSTRAINT pk_colors_game PRIMARY KEY (id)
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS images (
+        name TEXT,
+        imagePath TEXT,
+        CONSTRAINT pk_iamges PRIMARY KEY (name)
       )
     ''');
   }
 
-  void _onUpgrade(Database db, int oldVersion, int newVersion) async {
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < newVersion) {}
   }
 
   Future<void> sendDataToBackend(String table) async {
     // Obtener solo los datos no sincronizados de SQLite
-    List<Map<String, dynamic>> unsyncedData = await getUnsyncedData(table);
+    // List<Map<String, dynamic>> unsyncedData = await getUnsyncedData(table);
 
     // URL del endpoint de tu API backend
-    String apiUrl = 'https://tu-api-backend.com/$table';
+    // String apiUrl = 'https://tu-api-backend.com/$table';
 
     // Realizar la solicitud HTTP POST al backend con los datos no sincronizados
-    // TODO
     // await http.post(
     //   Uri.parse(apiUrl),
     //   body: {
@@ -127,9 +159,9 @@ class DatabaseHelper {
 
   Future<void> clearData(String table) async {
     Database db = await database;
-    await db.rawDelete('DELETE FROM ${table}');
-    await db.rawUpdate(
-        'UPDATE sqlite_sequence SET seq = 1 WHERE name = ?', [table]);
+    await db.rawDelete('DELETE FROM $table');
+    // await db.rawUpdate(
+    //     'UPDATE sqlite_sequence SET seq = 1 WHERE name = ? ', [table]);
   }
 
   Future<bool> isFieldExist(String tableName, String fieldName) async {

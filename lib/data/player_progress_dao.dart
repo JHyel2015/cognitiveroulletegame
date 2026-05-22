@@ -8,7 +8,8 @@ class PlayerProgressDao {
 
   Future<int> insert(PlayerProgress playerProgress) async {
     Database db = await dbHelper.database;
-    return await db.insert(_table, playerProgress.toJson());
+    return await db.insert(_table, playerProgress.toJson(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<PlayerProgress>> getAllPlayerProgresss() async {
@@ -17,7 +18,7 @@ class PlayerProgressDao {
     return data.map((e) => PlayerProgress.fromJson(e)).toList();
   }
 
-  Future<PlayerProgress?> getPlayerProgressByID(int id) async {
+  Future<PlayerProgress?> getPlayerProgressByID(String id) async {
     Database db = await dbHelper.database;
     try {
       List<Map<String, dynamic>> data = await db.query(
@@ -45,12 +46,21 @@ class PlayerProgressDao {
     );
   }
 
-  Future<int> deletePlayerProgress(int id) async {
+  Future<int> deletePlayerProgress(String id) async {
     Database db = await dbHelper.database;
     return await db.delete(
       _table,
       where: 'id = ?',
       whereArgs: [id],
+    );
+  }
+
+  Future<int> deletePlayerProgressByPlayerID(String playerUID) async {
+    Database db = await dbHelper.database;
+    return await db.delete(
+      _table,
+      where: 'userId = ?',
+      whereArgs: [playerUID],
     );
   }
 

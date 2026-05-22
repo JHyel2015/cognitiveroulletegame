@@ -43,7 +43,7 @@ import 'package:flutter/material.dart';
 // var kBody4 = GoogleFonts.montserrat(
 //     fontSize: 10.0, color: kBlackColor, fontWeight: FontWeight.bold);
 
-var kMertiolateColor = MaterialColor(
+var kMertiolateColor = const MaterialColor(
   0xffda4945,
   <int, Color>{
     50: Color(0xffFBE9E9),
@@ -59,5 +59,13 @@ var kMertiolateColor = MaterialColor(
   },
 );
 
-var kColorPrimary = Color(0xff2C60FF);
-var kColorSecondary = Color(0xffE4F3FA);
+var kColorPrimary = const Color(0xff2C60FF);
+var kColorSecondary = const Color(0xffE4F3FA);
+
+var kFirebaseLEDStatus = 'EstadoLED';
+var kFirebaseSensores = 'RuletaBaseDatos/N1_Color_Que_Juega';
+var kFirebaseIndiceRuleta = 'RuletaBaseDatos/N1_Indice_ruleta/Indice';
+var kFirebaseBoton = 'RuletaBaseDatos/N1_Boton_push/estadoBoton';
+var kFirebaseAcierto = 'RuletaBaseDatos/N1_Acierto/acierto';
+var kFirebaseLevel = 'RuletaBaseDatos/Niveles/Nivel';
+var kFirebaseCount = 'RuletaBaseDatos/N3_Suma';

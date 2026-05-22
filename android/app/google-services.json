@@ -12,7 +12,12 @@
           "package_name": "com.example.cognitiveroulletegame"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "940308333057-uub738elrjmntpsjaughqt8to12a4m0d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAbXNnX4rFNOY4OaZInGl2dnO6HfO4Qmo8"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "940308333057-uub738elrjmntpsjaughqt8to12a4m0d.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "940308333057-govp71spjfrcqap8e0gv6vnnun5qqlfv.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.cognitiveroulletegame"
+              }
+            }
+          ]
         }
       }
     }

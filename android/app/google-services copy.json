@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "586922043846",
+    "firebase_url": "https://esp32colores-default-rtdb.firebaseio.com",
+    "project_id": "esp32colores",
+    "storage_bucket": "esp32colores.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:586922043846:android:03ad30a61580cd201a6ac7",
+        "android_client_info": {
+          "package_name": "com.example.cognitiveroulletegame"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA547kVpSj7DwIcNyCQCWMGyKHXKs15XJE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -8,7 +8,8 @@ class ColorsGameDao {
 
   Future<int> insert(ColorsGame colorsGame) async {
     Database db = await dbHelper.database;
-    return await db.insert(_table, colorsGame.toJson());
+    return await db.insert(_table, colorsGame.toJson(isSqlLite: true),
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<ColorsGame>> getAllColorsGames() async {
@@ -17,13 +18,13 @@ class ColorsGameDao {
     return data.map((e) => ColorsGame.fromJson(e)).toList();
   }
 
-  Future<ColorsGame?> getColorsGameByID(int gameId) async {
+  Future<ColorsGame?> getColorsGameByID(String id) async {
     Database db = await dbHelper.database;
     try {
       List<Map<String, dynamic>> data = await db.query(
         _table,
-        where: 'gameId = ?',
-        whereArgs: [gameId],
+        where: 'id = ?',
+        whereArgs: [id],
       );
       if (data.isNotEmpty) {
         return ColorsGame.fromJson(data.first);
@@ -39,18 +40,27 @@ class ColorsGameDao {
     Database db = await dbHelper.database;
     return await db.update(
       _table,
-      colorsGame.toJson(),
-      where: 'gameId = ?',
-      whereArgs: [colorsGame.gameId],
+      colorsGame.toJson(isSqlLite: true),
+      where: 'id = ?',
+      whereArgs: [colorsGame.id],
     );
   }
 
-  Future<int> deleteColorsGame(int gameId) async {
+  Future<int> deleteColorsGame(String id) async {
     Database db = await dbHelper.database;
     return await db.delete(
       _table,
-      where: 'gameId = ?',
-      whereArgs: [gameId],
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteColorsGameByPlayerID(String playerId) async {
+    Database db = await dbHelper.database;
+    return await db.delete(
+      _table,
+      where: 'userId = ?',
+      whereArgs: [playerId],
     );
   }
 

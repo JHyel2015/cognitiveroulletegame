@@ -1,0 +1,903 @@
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+
+import 'dart:async';
+import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
+
+import 'package:audioplayers/audioplayers.dart';
+import 'package:cognitiveroulletegame/constans.dart';
+import 'package:cognitiveroulletegame/data/colors_game_notifier.dart';
+import 'package:cognitiveroulletegame/data/player_notifier.dart';
+import 'package:cognitiveroulletegame/data/player_progress_notifier.dart';
+import 'package:cognitiveroulletegame/models/colors_game.dart';
+import 'package:cognitiveroulletegame/models/esp32.dart';
+import 'package:cognitiveroulletegame/models/player_data.dart';
+import 'package:cognitiveroulletegame/models/player_progress.dart';
+import 'package:cognitiveroulletegame/services/app_logger.dart';
+import 'package:cognitiveroulletegame/services/image_cache_service.dart';
+import 'package:cognitiveroulletegame/services/speaker_service.dart';
+import 'package:cognitiveroulletegame/shared/user_preferences.dart';
+import 'package:cognitiveroulletegame/widgets/ruleta_painter.dart';
+import 'package:cognitiveroulletegame/components/star_rating.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+// import 'package:flutter_blue/flutter_blue.dart';
+import 'package:http/http.dart' as http;
+
+import 'package:image/image.dart' as img;
+import 'package:flutter_image_filters/flutter_image_filters.dart';
+import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+
+class RoulleteGamePage extends StatefulWidget {
+  int gameId;
+  String title;
+  String textToSpeak;
+  RoulleteGamePage({
+    required this.gameId,
+    required this.title,
+    required this.textToSpeak,
+    super.key,
+  });
+
+  @override
+  State<RoulleteGamePage> createState() => _RoulleteGamePageState();
+}
+
+class _RoulleteGamePageState extends State<RoulleteGamePage>
+    with SingleTickerProviderStateMixin {
+  final Stopwatch _stopwatch = Stopwatch();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  int nElements = 6;
+  final commentController = TextEditingController();
+  // PageController
+  final _controller = PageController(viewportFraction: 0.8);
+  // TextController
+  final UserPreferences userPreferences = UserPreferences();
+
+  final _user = FirebaseAuth.instance.currentUser;
+  late PlayerData _player;
+  final SpeakerService speakerService = SpeakerService();
+  final logger = AppLogger();
+
+  bool _exited = false;
+  bool _ledOn = false;
+  int _valorEnvio = 0;
+  int _indiceRuleta = 0;
+  // Sensores _sensores = Sensores();
+  final ColorQueJuega _colorQueJuega = ColorQueJuega();
+  // final FirebaseDatabase _databaseReference = FirebaseDatabase.instance;
+  late FirebaseApp _secondaryApp;
+  late FirebaseDatabase _databaseReference;
+  late StreamSubscription<DatabaseEvent> _ledOnSubscription;
+  late StreamSubscription<DatabaseEvent> _sensoresSubscription;
+  late StreamSubscription<DatabaseEvent> _botonSubscription;
+  late DatabaseReference _ledOnRef;
+  late DatabaseReference _sensoresRef;
+  late DatabaseReference _indiceRuletaRef;
+  late DatabaseReference _botonRef;
+  late DatabaseReference _aciertoRef;
+  late DatabaseReference _levelRef;
+
+  int isTappedOut = 0;
+  int isCorrect = 0;
+  int _randomNum = 0;
+  int scoreMax = 4;
+  int currentScore = 0;
+  int selectedItem = -1;
+  int _segmentIndex = 0;
+
+  int _intentos = 0;
+  int _aciertos = 0;
+  int _fallos = 0;
+
+  bool _visible = false;
+  final bool _firstTime = true;
+
+  late Duration elapsedTime;
+
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+  late AnimationStatusListener _statusListener;
+  double _currentAngle = pi / 6;
+  double _angle = pi / 2;
+  final int _segments = 6;
+
+  int _time = 0;
+
+  List<String> fileURLs = [];
+  List<String> randomFileURLs = [];
+
+  final List<String> _colorList = [
+    'blue',
+    'purple',
+    'orange',
+    'green',
+    'red',
+    'yellow',
+  ];
+
+  final Map<String, String> _spanishColors = {
+    'blue': 'azul',
+    'purple': 'violeta',
+    'orange': 'naranja',
+    'green': 'verde',
+    'red': 'rojo',
+    'yellow': 'amarillo',
+  };
+
+  final List<Color> _colors = [
+    Colors.blue,
+    Colors.purple,
+    Colors.orange,
+    Colors.green,
+    Colors.red,
+    Colors.yellow,
+  ];
+
+  final List<double> _angles = [
+    (pi / 6) - (2 * pi / 3),
+    (pi / 2) - (2 * pi / 3),
+    (pi - pi / 6) - (2 * pi / 3),
+    (pi + pi / 6) - (2 * pi / 3),
+    (3 * pi / 2) - (2 * pi / 3),
+    (2 * pi - pi / 6) - (2 * pi / 3),
+  ];
+
+  final Map<String, Image> _imagesMap = <String, Image>{};
+
+  List<Image> _images = [];
+  late List<Image?> _randomImages = [];
+
+  late TextureSource texture;
+  late BrightnessShaderConfiguration configuration;
+  bool textureLoaded = false;
+
+  String? _playerProgressId;
+
+  bool _isWakelockEnabled = false;
+
+  int _remainingTime = 0;
+  bool _isDisposed = false;
+
+  Future<void> init() async {
+    _secondaryApp = Firebase.app('esp32colores');
+    _databaseReference = FirebaseDatabase.instanceFor(
+      app: _secondaryApp,
+      databaseURL: 'https://esp32colores-default-rtdb.firebaseio.com',
+    );
+
+    _ledOnRef = _databaseReference.ref(kFirebaseLEDStatus);
+    _sensoresRef = _databaseReference.ref(kFirebaseSensores);
+    _indiceRuletaRef = _databaseReference.ref(kFirebaseIndiceRuleta);
+    _botonRef = _databaseReference.ref(kFirebaseBoton);
+    _aciertoRef = _databaseReference.ref(kFirebaseAcierto);
+    _levelRef = _databaseReference.ref(kFirebaseLevel);
+
+    _databaseReference.setPersistenceEnabled(true);
+    _databaseReference.setPersistenceCacheSizeBytes(10000000);
+
+    await _ledOnRef.keepSynced(true);
+    await _sensoresRef.keepSynced(true);
+    await _indiceRuletaRef.keepSynced(true);
+    await _botonRef.keepSynced(true);
+    await _aciertoRef.keepSynced(true);
+    await _levelRef.keepSynced(true);
+
+    _levelRef.set(widget.gameId);
+
+    try {
+      final counterSnapshot = await _ledOnRef.get();
+
+      logger.i(
+        'Connected to directly configured database and read'
+        '${counterSnapshot.value}',
+      );
+    } catch (err) {
+      logger.e(err.toString());
+    }
+
+    _ledOnSubscription = _ledOnRef.onValue.listen(
+      (DatabaseEvent event) {
+        setState(() {
+          _ledOn = (event.snapshot.value ?? false) as bool;
+          logger.d(event.snapshot.value.toString());
+        });
+      },
+    );
+
+    _botonSubscription = _botonRef.onValue.listen(
+      (DatabaseEvent event) async {
+        _valorEnvio = (event.snapshot.value ?? 0) as int;
+        if (_valorEnvio == 1) {
+          if (_animationController.isAnimating) {
+            _stopAnimation();
+          } else {
+            _fallos++;
+            _intentos++;
+            _spinAnimation();
+          }
+          await _botonRef.set(0);
+        }
+        setState(() {
+          logger.d(event.snapshot.value.toString());
+        });
+      },
+    );
+
+    _sensoresSubscription = _indiceRuletaRef.onValue.listen(
+      (DatabaseEvent event) async {
+        if (_ledOn) {
+          setState(() {
+            _indiceRuleta = (event.snapshot.value ?? 0) as int;
+            _angle = 0;
+            _angle = _angles[_indiceRuleta];
+            _currentAngle = _angle;
+            logger.d('3 ${_colorQueJuega.toJson().toString()}');
+          });
+          await _aciertoRef.set(0);
+        }
+      },
+    );
+  }
+
+  Future<void> _playSound(String assetPath) async {
+    try {
+      await _audioPlayer.play(AssetSource(assetPath));
+    } catch (e) {
+      logger.e('Error al reproducir el sonido: $e');
+    }
+  }
+
+  Future<void> _speak({String textToSpeak = ''}) async {
+    if (textToSpeak == '') textToSpeak = widget.textToSpeak;
+    await speakerService.stop();
+    await speakerService.speak(textToSpeak);
+  }
+
+  Future _stop() async {
+    await speakerService.stop();
+    // setState(() => ttsState = TtsState.stopped);
+  }
+
+  Future<void> _getFiles() async {
+    final savedImageNotifier = Provider.of<ImageCacheService>(
+      context,
+      listen: false,
+    );
+
+    await savedImageNotifier.init();
+
+    final image = savedImageNotifier.getFilteredImages('animal-');
+
+    for (var img in image) {
+      if (File(img.imagePath).existsSync()) {
+        _imagesMap[img.name] = Image.file(File(img.imagePath));
+      }
+    }
+
+    _images = _imagesMap.values.toList();
+
+    randomElements();
+
+    setState(() {});
+    _animationController.forward(from: 0);
+    _stopwatch.start();
+    Future.delayed(Duration(seconds: _time), () {
+      if (!_isDisposed) {
+        _animationController.stop();
+        logger.i('Se cumplio el tiempo');
+        if (_isWakelockEnabled) {
+          WakelockPlus.disable();
+        }
+        _isWakelockEnabled = false;
+        openBox();
+      }
+    });
+  }
+
+  List<T> getRandomElements<T>(List<T> list, int n) {
+    list.shuffle();
+    return list.take(n).toList();
+  }
+
+  void randomElements() {
+    List<Image?> randomImages = List.filled(6, null, growable: false);
+
+    for (var i = 0; i < _colorList.length && _images.isNotEmpty; i++) {
+      var keyList = _imagesMap.keys
+          .toList()
+          .where((item) => item.contains('-${_colorList[i]}-'))
+          .toList();
+      keyList.shuffle();
+      keyList.first;
+      randomImages[i] = _imagesMap[keyList.first]!;
+    }
+
+    _randomImages = randomImages;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _remainingTime = userPreferences.time;
+    _speak();
+    _ledOn = userPreferences.isLedOn;
+    init();
+
+    WakelockPlus.enable();
+    _isWakelockEnabled = true;
+
+    _time = userPreferences.time;
+    int time = _time >= 60 ? 20 : _time;
+
+    _statusListener = (AnimationStatus status) {
+      if (status == AnimationStatus.completed) {
+        _showResult();
+      }
+    };
+
+    _animationController = AnimationController(
+      duration: Duration(seconds: time),
+      vsync: this,
+    )
+      ..addListener(() {
+        if (!_ledOn) {
+          _currentAngle = _animation.value;
+        }
+        setState(() {});
+      })
+      ..addStatusListener(_statusListener);
+
+    _getFiles();
+
+    getRandomInt();
+
+    final curvedAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.linear,
+    );
+    // _animation = Tween<double>(begin: -(pi / 2), end: (2 * pi * 4) - (pi / 2))
+
+    // Configurar un TweenSequence para saltos de 60 grados
+    _animation = TweenSequence<double>(
+      List.generate(
+        12,
+        (index) => TweenSequenceItem(
+          tween: Tween<double>(
+            begin: -(pi / 2) + (index * (pi / 3)),
+            end: -(pi / 2) + (index * (pi / 3)),
+          ),
+          weight: 1,
+        ),
+      ),
+    ).animate(curvedAnimation);
+
+    configuration = BrightnessShaderConfiguration();
+    configuration.brightness = 0.5;
+    TextureSource.fromAsset('assets/roulette.png')
+        .then((value) => texture = value)
+        .whenComplete(
+          () => setState(() {
+            textureLoaded = true;
+          }),
+        );
+    addGameProgress();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _stopwatch.stop();
+    _animationController.dispose();
+    _controller.dispose();
+    commentController.dispose();
+    super.dispose();
+    _ledOnSubscription.cancel();
+    _sensoresSubscription.cancel();
+    _botonSubscription.cancel();
+    WakelockPlus.disable();
+    _isWakelockEnabled = false;
+  }
+
+  Future<void> getRandomInt() async {
+    final random = Random();
+    int number = -1;
+    do {
+      number = random.nextInt(_segments);
+    } while (_randomNum == number);
+    if (_ledOn) {
+      logger.i(
+          'entra primera vez ${_colorList[number].substring(0, 1).toUpperCase()}${_colorList[number].substring(1).toLowerCase()}');
+      await _sensoresRef.update(
+        {
+          "color":
+              '${_colorList[number].substring(0, 1).toUpperCase()}${_colorList[number].substring(1).toLowerCase()}',
+          "led": '$number',
+        },
+      );
+    }
+    setState(() {
+      _randomNum = number;
+    });
+    _speak(
+        textToSpeak:
+            'Color que juega: ${_spanishColors[_colorList[_randomNum]]!}');
+  }
+
+  void _spinAnimation() {
+    if (_animationController.isAnimating) return;
+    _animationController.forward(from: 0);
+  }
+
+  void _stopAnimation() {
+    if (_animationController.isAnimating) {
+      _animationController.stop();
+      _showResult();
+    }
+  }
+
+  Future<void> _showResult() async {
+    final double normalizedAngle =
+        (((_currentAngle) + (2 * pi / 3)) % (2 * pi));
+    print(_currentAngle);
+    final double segmentAngle = (2 * pi / _segments);
+    _segmentIndex =
+        (_segments + (normalizedAngle / segmentAngle).floor()) % _segments;
+
+    _visible = true;
+    setState(() {});
+    _intentos++;
+
+    if (_randomNum == _segmentIndex) {
+      _aciertos++;
+      await _aciertoRef.set(_aciertos);
+      await _playSound('sounds/success.mp3');
+    } else {
+      // await _playSound('sounds/fail.mp3');
+      _fallos++;
+    }
+    addColorsGame(_colorList[_segmentIndex], _colorList[_randomNum],
+        _randomNum == _segmentIndex);
+    if (!_exited) {
+      Future.delayed(const Duration(seconds: 2), () {
+        _animationController.forward(from: 0);
+        getRandomInt();
+        randomElements();
+        _visible = false;
+      });
+    }
+  }
+
+  List<Widget> _buildPositionedImages() {
+    List<Widget> positionedImages = [];
+    final int imageCount = _randomImages.length;
+    const double centerX = 175; // half of the container width
+    const double centerY = 175; // half of the container height
+    const double radius = 120; // radius of the circle
+
+    for (int i = 0; i < imageCount; i++) {
+      final double angle =
+          ((2 * pi * i) / imageCount) + (pi / 6) - (2 * pi / 3);
+      final double x = centerX + radius * cos(angle);
+      final double y = centerY + radius * sin(angle);
+
+      positionedImages.add(
+        Positioned(
+          left: x - 50, // Adjust the offset to center the image
+          top: y - 50, // Adjust the offset to center the image
+          width: 100,
+          height: 100,
+          child: _randomImages[i] ?? SizedBox(),
+        ),
+      );
+    }
+
+    return positionedImages;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    final playerNotifier = Provider.of<PlayerNotifier>(context);
+
+    _player = playerNotifier.player!;
+
+    // if (_images.isEmpty) {
+    //   return Container(
+    //     color: kColorSecondary,
+    //     child: SafeArea(
+    //       child: Scaffold(
+    //         appBar: AppBar(
+    //           automaticallyImplyLeading: false,
+    //           centerTitle: true,
+    //           backgroundColor: Colors.transparent,
+    //           elevation: 0,
+    //           title: Text(widget.title),
+    //         ),
+    //         body: Center(
+    //           child: CircularProgressIndicator(),
+    //         ),
+    //       ),
+    //     ),
+    //   );
+    // }
+
+    return Container(
+      color: kColorSecondary,
+      child: SafeArea(
+        child: Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            centerTitle: true,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text(widget.title),
+            actions: [
+              IconButton(
+                onPressed: () {
+                  _stop();
+                  userPreferences.isMute = !userPreferences.isMute;
+                  if (!userPreferences.isMute) {
+                    _speak();
+                  }
+                },
+                icon: userPreferences.isMute
+                    ? Icon(
+                        Icons.voice_over_off,
+                        color: kColorPrimary,
+                      )
+                    : Icon(
+                        Icons.record_voice_over,
+                        color: kColorPrimary,
+                      ),
+              ),
+              IconButton(
+                onPressed: _speak,
+                icon: Icon(
+                  Icons.volume_up,
+                  color: kColorPrimary,
+                ),
+              ),
+            ],
+          ),
+          body: Stack(
+            alignment: AlignmentDirectional.center,
+            children: [
+              Positioned(
+                top: 100,
+                left: 10,
+                child: Container(
+                  padding: const EdgeInsets.all(10.0),
+                  margin: EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: Colors.blueAccent),
+                  ),
+                  child: Text(Duration(seconds: _stopwatch.elapsed.inSeconds)
+                      .toString()
+                      .split('.')[0]
+                      .substring(2)),
+                ),
+              ),
+              Positioned(
+                left: 10,
+                bottom: 10,
+                child: InkWell(
+                  onTap: _speak,
+                  child: Hero(
+                    tag: 'robot',
+                    child: Image.asset(
+                      'assets/robot.gif',
+                      width: width * .25,
+                    ),
+                  ),
+                ),
+              ),
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10.0),
+                      margin: EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(color: Colors.blueAccent),
+                      ),
+                      child: Text(
+                        widget.textToSpeak,
+                        style: TextStyle(
+                          fontSize: 15,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 35),
+                    Stack(
+                      alignment: AlignmentDirectional.center,
+                      children: [
+                        Container(
+                          width: 150,
+                          height: 150,
+                          decoration: BoxDecoration(
+                            color: Colors.grey,
+                            shape: BoxShape.circle,
+                          ),
+                          child: CircularProgressIndicator(
+                            backgroundColor: _colors[_randomNum],
+                            color: Colors.grey,
+                            value: _animationController.value,
+                            strokeWidth: 40.0,
+                          ),
+                        ),
+                        Text(
+                          Duration(
+                                  seconds: 15 -
+                                      (_animationController.value * 15).toInt())
+                              .toString()
+                              .split('.')[0]
+                              .substring(2),
+                        ),
+                      ],
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: _animationController.isAnimating
+                              ? _stopAnimation
+                              : _spinAnimation,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CustomPaint(
+                                size: Size(350, 350),
+                                painter: RuletaPainter(
+                                    0.0 - (2 * pi / 3), 6, _colors, []),
+                              ),
+                              if (_randomImages.isNotEmpty)
+                                ..._buildPositionedImages(),
+                              Transform.rotate(
+                                angle: _currentAngle,
+                                child: Image.asset(
+                                  'assets/flecha.png',
+                                  width: 225,
+                                  height: 225,
+                                ),
+                              ),
+                              Visibility(
+                                visible: _visible,
+                                child: Image.asset(
+                                  _segmentIndex == _randomNum
+                                      ? 'assets/check.png'
+                                      : 'assets/fail.webp',
+                                  width: 350,
+                                  height: 350,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                bottom: 10,
+                child: TextButton.icon(
+                  style: TextButton.styleFrom(
+                    backgroundColor: kColorPrimary,
+                  ),
+                  onPressed: () {
+                    elapsedTime = _stopwatch.elapsed;
+                    _time = elapsedTime.inSeconds;
+                    _stopwatch.stop();
+                    if (_isWakelockEnabled) {
+                      WakelockPlus.disable();
+                    }
+                    _isWakelockEnabled = false;
+                    openBox();
+                  },
+                  icon: Icon(
+                    Icons.close,
+                    color: kColorSecondary,
+                  ),
+                  label: Text(
+                    'Salir',
+                    style: TextStyle(color: kColorSecondary),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void openBox() {
+    _animationController.removeStatusListener(_statusListener);
+    _exited = true;
+    _stopAnimation();
+    BuildContext dialogContext;
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        dialogContext = context;
+        return SafeArea(
+          child: Container(
+            padding: EdgeInsets.all(8),
+            child: Dialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10))),
+              child: Container(
+                padding: EdgeInsets.all(15),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Fin del juego',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 15),
+                      StarRating(
+                          attempts: _intentos, correctAnswers: _aciertos),
+                      SizedBox(height: 15),
+                      Text(
+                        'Resultados',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 15),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Chip(
+                                //avatar: Icon(Icons.schedule),
+                                label: Text(
+                                    'Tiempo ${Duration(seconds: _time).toString().split('.')[0].substring(2)}'),
+                              ),
+                              Chip(
+                                //avatar: Icon(Icons.sunny),
+                                label: Text('Aciertos ${_aciertos.toString()}'),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Chip(
+                                //avatar: Icon(Icons.sunny),
+                                label: Text('Intentos ${_intentos.toString()}'),
+                              ),
+                              Chip(
+                                //avatar: Icon(Icons.sunny),
+                                label: Text('Fallos ${_fallos.toString()}'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 15),
+                      Text(
+                        'Comentarios',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 15),
+                      TextFormField(
+                        controller: commentController,
+                        maxLines: 6,
+                        readOnly: userPreferences.isAnonymous,
+                        decoration: InputDecoration(
+                          hintText: userPreferences.isAnonymous
+                              ? 'Usuario invitado no puede ingresar comentarios ni guardar resultados'
+                              : '',
+                          enabledBorder: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(width: 2, color: kColorPrimary),
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide:
+                                BorderSide(width: 2, color: kColorPrimary),
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 15),
+                      Text(
+                        'Para enviar los resultados y regresar al menú principal, presiona el boton finalizar',
+                      ),
+                      SizedBox(height: 15),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: kColorPrimary,
+                        ),
+                        onPressed: () {
+                          addGameProgress();
+                          Navigator.pop(dialogContext);
+                          Navigator.pushNamedAndRemoveUntil(
+                              context, '/homepage', ModalRoute.withName('/'));
+                        },
+                        label: Text(
+                          'Finalizar',
+                          style: TextStyle(color: kColorSecondary),
+                        ),
+                        icon: Icon(
+                          Icons.undo,
+                          color: kColorSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> addGameProgress() async {
+    final playerProgressNotifier = Provider.of<PlayerProgressNotifier>(
+      context,
+      listen: false,
+    );
+
+    PlayerProgress playerProgress = PlayerProgress(
+      id: _playerProgressId,
+      userId: _playerProgressId == null ? '' : _player.uid!,
+      gameId: widget.gameId,
+      levelId: 0,
+      score: _aciertos > 0 ? (_intentos / _aciertos).floor() : 0,
+      successes: _aciertos,
+      failures: _fallos,
+      attempts: _intentos,
+      playedTime:
+          Duration(seconds: _time).toString().split('.')[0].substring(2),
+      comment: commentController.text,
+      status: 'DONE',
+      timestamp: DateTime.now(),
+    );
+
+    if (_playerProgressId != null) {
+      await playerProgressNotifier.updatePlayerProgress(playerProgress);
+    } else {
+      _playerProgressId = await playerProgressNotifier
+          .addPlayerProgress(playerProgress) as String?;
+    }
+  }
+
+  void addColorsGame(String selectedColor, String correctColor, bool success) {
+    final colorsGameNotifier = Provider.of<ColorsGameNotifier>(
+      context,
+      listen: false,
+    );
+
+    ColorsGame colorsGame = ColorsGame(
+      playerProgressId: _playerProgressId!,
+      gameId: widget.gameId,
+      userId: _player.uid!,
+      selectedColor: selectedColor,
+      correctColor: correctColor,
+      success: success,
+      timestamp: DateTime.now(),
+    );
+
+    colorsGameNotifier.addColorsGame(colorsGame);
+  }
+}

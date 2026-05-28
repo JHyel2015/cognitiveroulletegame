@@ -47,7 +47,7 @@ class LevelNotifier extends ChangeNotifier {
     return _levels;
   }
 
-  void sync() async {
+  Future<void> sync() async {
     await _syncService.syncLevelData();
     notifyListeners();
   }

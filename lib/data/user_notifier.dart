@@ -1,38 +1,40 @@
+import 'package:cognitiveroulletegame/shared/user_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cognitiveroulletegame/data/user_dao.dart';
 import 'package:cognitiveroulletegame/data/user_service.dart';
-import 'package:cognitiveroulletegame/models/user.dart';
-import 'package:cognitiveroulletegame/services/sync_service.dart';
+import 'package:cognitiveroulletegame/models/user_data.dart';
 
 class UserNotifier extends ChangeNotifier {
   final UserDao _userDao = UserDao();
   final UserService _userService = UserService();
-  final SyncService _syncService = SyncService();
-  List<User> _users = [];
+  final UserPreferences _userPreferences = UserPreferences();
+  final List<UserData> _users = [];
 
-  User get user => _users.first;
+  UserData get user => _users.first;
 
   Future<void> init() async {
-    _users[0] = await _userDao.getUserByEmail(user.email);
+    if (_users.isNotEmpty) {
+      _users[0] = await _userDao.getUserByEmail(user.email);
+    }
     notifyListeners();
   }
 
-  Future<User> getUserByEmail(String email) async {
+  Future<UserData> getUserByEmail(String email) async {
     return await _userDao.getUserByEmail(email);
   }
 
-  Future<void> addUser(User user) async {
-    int id = await _userDao.insert(user);
-    user.id = id;
+  Future<void> addUser(UserData user) async {
+    await _userDao.insert(user);
+    user.uid = _userPreferences.storedUID;
     user.synced = 1;
     await _userService.addData(user);
     await _userDao.updateUser(user);
-    _users[0] = await _userDao.getUserByEmail(user.email);
+    _users.add(await _userDao.getUserByEmail(user.email));
     notifyListeners();
   }
 
-  Future<void> updateUser(User user) async {
+  Future<void> updateUser(UserData user) async {
     user.synced = 0;
     await _userDao.updateUser(user);
     user.synced = 1;
@@ -43,12 +45,18 @@ class UserNotifier extends ChangeNotifier {
   }
 
   // get user list
-  List<User> getAllTransactionList() {
+  List<UserData> getAllUsersList() {
     return _users;
   }
 
-  // void sync() async {
+  // Future<void> sync() async {
   //   await _syncService.syncUserData();
   //   notifyListeners();
   // }
+
+  Future<void> clearData() async {
+    await _userDao.clearData();
+
+    notifyListeners();
+  }
 }

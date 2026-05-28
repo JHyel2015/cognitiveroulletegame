@@ -32,4 +32,48 @@ class UserPreferences {
   set firstTime(bool value) {
     _preferences.setBool('firstTime', value);
   }
+
+  bool get isMute => _preferences.getBool('isMute') ?? false;
+
+  set isMute(bool value) {
+    _preferences.setBool('isMute', value);
+  }
+
+  bool get isAnonymous => _preferences.getBool('isAnonymous') ?? false;
+
+  set isAnonymous(bool value) {
+    _preferences.setBool('isAnonymous', value);
+  }
+
+  bool get isLedOn => _preferences.getBool('isLedOn') ?? false;
+
+  set isLedOn(bool value) {
+    _preferences.setBool('isLedOn', value);
+  }
+
+  bool get areImagesDownloaded =>
+      _preferences.getBool('areImagesDownloaded') ?? false;
+
+  set areImagesDownloaded(bool value) {
+    _preferences.setBool('areImagesDownloaded', value);
+  }
+
+  int get time => _preferences.getInt('time') ?? 15;
+
+  set time(int value) {
+    _preferences.setInt('time', value);
+  }
+
+  String get storedUID =>
+      _preferences.getString('anonymousUID') ?? 'anonymousUID';
+
+  set storedUID(String value) {
+    _preferences.setString('anonymousUID', value);
+  }
+
+  String get playerName => _preferences.getString('playerName') ?? 'playerName';
+
+  set playerName(String value) {
+    _preferences.setString('playerName', value);
+  }
 }

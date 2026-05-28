@@ -55,14 +55,14 @@ class GameNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  void clearData() async {
+  Future<void> clearData() async {
     await _gameDao.clearData();
     await _gameService.clearData();
 
     notifyListeners();
   }
 
-  void sync() async {
+  Future<void> sync() async {
     await _syncService.syncGameData();
     notifyListeners();
   }

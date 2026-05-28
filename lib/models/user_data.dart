@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class User {
-  int? id;
+class UserData {
+  String? uid;
   String? name;
   String displayName;
   final String email;
@@ -10,8 +10,8 @@ class User {
   int synced;
   DateTime timestamp;
 
-  User({
-    this.id,
+  UserData({
+    this.uid,
     this.name,
     required this.displayName,
     required this.email,
@@ -21,9 +21,9 @@ class User {
     required this.timestamp,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['id'] as int,
+  factory UserData.fromJson(Map<String, dynamic> json) {
+    return UserData(
+      uid: json['uid'] as String,
       name: json['name'] as String,
       displayName: json['displayName'] as String,
       email: json['email'] as String,
@@ -36,7 +36,7 @@ class User {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'id': id,
+      'uid': uid,
       'name': name,
       'displayName': displayName,
       'email': email,
@@ -47,9 +47,9 @@ class User {
     };
   }
 
-  factory User.fromQuery(QueryDocumentSnapshot<Object?> doc) {
-    return User(
-      id: doc['id'] as int,
+  factory UserData.fromQuery(QueryDocumentSnapshot<Object?> doc) {
+    return UserData(
+      uid: doc['uid'] as String,
       name: doc['name'] as String,
       displayName: doc['displayName'] as String,
       email: doc['email'] as String,

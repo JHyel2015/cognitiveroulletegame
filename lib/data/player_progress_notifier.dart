@@ -18,18 +18,19 @@ class PlayerProgressNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<PlayerProgress?> getPlayerProgressById(int id) async {
+  Future<PlayerProgress?> getPlayerProgressById(String id) async {
     return await _playerProgressDao.getPlayerProgressByID(id);
   }
 
-  Future<void> addPlayerProgress(PlayerProgress playerProgress) async {
-    int id = await _playerProgressDao.insert(playerProgress);
+  Future<String> addPlayerProgress(PlayerProgress playerProgress) async {
+    String id = await _playerProgressService.addData(playerProgress);
     playerProgress.id = id;
+    await _playerProgressDao.insert(playerProgress);
     playerProgress.synced = 1;
-    await _playerProgressService.addData(playerProgress);
     await _playerProgressDao.updatePlayerProgress(playerProgress);
     _playerProgresss = await _playerProgressDao.getAllPlayerProgresss();
     notifyListeners();
+    return playerProgress.id!;
   }
 
   Future<void> updatePlayerProgress(PlayerProgress playerProgress) async {
@@ -44,25 +45,45 @@ class PlayerProgressNotifier extends ChangeNotifier {
 
   // get playerProgresss list
   List<PlayerProgress> getAllPlayerProgresssList() {
-    return _playerProgresss;
+    return _playerProgresss.where((item) => item.userId != '').toList();
   }
 
-  // delete playerProgress
-  void deletePlayerProgressItem(PlayerProgress playerProgress) async {
+  // get playerProgresss list
+  List<PlayerProgress> getPlayerProgresssByPlayer(String playerId) {
+    return _playerProgresss.where((item) => item.userId == playerId).toList();
+  }
+
+  // delete playerProgress item
+  Future<void> deletePlayerProgressItem(PlayerProgress playerProgress) async {
     await _playerProgressDao.deletePlayerProgress(playerProgress.id!);
     await _playerProgressService.deleteData(playerProgress);
     _playerProgresss = await _playerProgressDao.getAllPlayerProgresss();
     notifyListeners();
   }
 
-  void clearData() async {
+  // delete playerProgress by player
+  Future<void> deletePlayerProgressByPlayerID(String playerUID) async {
+    await _playerProgressDao.deletePlayerProgressByPlayerID(playerUID);
+    await _playerProgressService.deleteDataByPlayerUID(playerUID);
+    _playerProgresss = await _playerProgressDao.getAllPlayerProgresss();
+    notifyListeners();
+  }
+
+  // delete playerProgress by User
+  Future<void> deletePlayerProgressByUser() async {
     await _playerProgressDao.clearData();
     await _playerProgressService.clearData();
+    _playerProgresss = await _playerProgressDao.getAllPlayerProgresss();
+    notifyListeners();
+  }
+
+  Future<void> clearData() async {
+    await _playerProgressDao.clearData();
 
     notifyListeners();
   }
 
-  void sync() async {
+  Future<void> sync() async {
     await _syncService.syncPlayerProgressData();
     notifyListeners();
   }

@@ -17,14 +17,22 @@ class LevelDao {
     return data.map((e) => Level.fromJson(e)).toList();
   }
 
-  Future<Level> getLevelByID(int id) async {
+  Future<Level?> getLevelByID(int id) async {
     Database db = await dbHelper.database;
-    List<Map<String, dynamic>> data = await db.query(
-      _table,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    return Level.fromJson(data.first);
+    try {
+      List<Map<String, dynamic>> data = await db.query(
+        _table,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      if (data.isNotEmpty) {
+        return Level.fromJson(data.first);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<int> updateLevel(Level level) async {
